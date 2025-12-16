@@ -7,6 +7,7 @@ import { RoadmapSection } from "@/components/home-page/roadmap-section"
 import { FAQSection } from "@/components/home-page/faq-section"
 import { Footer } from "@/components/home-page/footer"
 import { ScrollProgress } from "@/components/home-page/scroll-progress"
+import { HorseTimeline } from "@/components/home-page/time-line"
 
 export default function Home() {
   return (
@@ -17,7 +18,7 @@ export default function Home() {
       <FeaturesSection />
       <JoinPlatformSection />
       <HowItWorksSection />
-      <RoadmapSection />
+      <HorseTimeline/>
       <FAQSection />
       <Footer />
     </main>

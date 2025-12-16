@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { Shield, Eye, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ParticlesBackground } from "@/components/home-page/particles-background"
+import { useState, useEffect } from "react"
 
 const features = [
     { icon: Shield, text: "100% Decentralized" },
@@ -12,6 +13,38 @@ const features = [
 ]
 
 export function HeroSection() {
+    const [timeLeft, setTimeLeft] = useState({
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0
+    })
+
+    useEffect(() => {
+        const targetDate = new Date('2025-12-27T21:00:00+05:30') // 9:00 PM IST
+
+        const calculateTimeLeft = () => {
+            const now = new Date()
+            const difference = targetDate.getTime() - now.getTime()
+
+            if (difference > 0) {
+                setTimeLeft({
+                    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+                    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+                    minutes: Math.floor((difference / 1000 / 60) % 60),
+                    seconds: Math.floor((difference / 1000) % 60)
+                })
+            } else {
+                setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+            }
+        }
+
+        calculateTimeLeft()
+        const timer = setInterval(calculateTimeLeft, 1000)
+
+        return () => clearInterval(timer)
+    }, [])
+
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20" id="platform">
             {/* Animated Background */}
@@ -49,6 +82,71 @@ export function HeroSection() {
                     >
                         Based on <span className="text-primary font-semibold">BNB Smart Chain</span> Blockchain
                     </motion.p>
+
+                    {/* Countdown Timer */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.5 }}
+                        className="pt-8"
+                    >
+                        <div className="inline-block">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.5, delay: 0.6 }}
+                                className="mb-4"
+                            >
+                                <span className="text-sm sm:text-base text-muted-foreground uppercase tracking-wider font-semibold">
+                                    Launch Countdown
+                                </span>
+                            </motion.div>
+
+                            <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+                                {[
+                                    { value: timeLeft.days, label: 'Days' },
+                                    { value: timeLeft.hours, label: 'Hours' },
+                                    { value: timeLeft.minutes, label: 'Minutes' },
+                                    { value: timeLeft.seconds, label: 'Seconds' }
+                                ].map((item, index) => (
+                                    <motion.div
+                                        key={item.label}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.5, delay: 0.7 + index * 0.1 }}
+                                        className="flex flex-col items-center"
+                                    >
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl" />
+                                            <div className="relative bg-card/80 backdrop-blur-md border-2 border-primary/30 rounded-2xl px-4 sm:px-6 py-3 sm:py-4 min-w-[70px] sm:min-w-[90px] shadow-lg">
+                                                <motion.span
+                                                    key={item.value}
+                                                    initial={{ scale: 1.2, opacity: 0 }}
+                                                    animate={{ scale: 1, opacity: 1 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary tabular-nums"
+                                                >
+                                                    {String(item.value).padStart(2, '0')}
+                                                </motion.span>
+                                            </div>
+                                        </div>
+                                        <span className="text-xs sm:text-sm text-muted-foreground mt-2 uppercase tracking-wide font-medium">
+                                            {item.label}
+                                        </span>
+                                    </motion.div>
+                                ))}
+                            </div>
+
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 1.1 }}
+                                className="text-xs sm:text-sm text-muted-foreground mt-4"
+                            >
+                                December 27, 2025 • 9:00 PM IST
+                            </motion.p>
+                        </div>
+                    </motion.div>
 
                     {/* Key Features */}
                     <motion.div
