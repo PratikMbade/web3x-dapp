@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Wallet-specific fields
+
+  walletAddress String    @unique
+  privyUserId   String    @unique
+  chainId       Int?      // Store which chain they're using (56 for BSC)
+
+  registeredAt   DateTime  @default(now())
+  registered Boolean   @default(false)
+  
+  // Relations
+  sessions      Session[]
+  accounts      Account[]
+  
+  @@index([walletAddress])
+  @@index([privyUserId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  expiresAt    DateTime
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String  @default("wallet")
+  provider          String  @default("privy")
+  providerAccountId String  // wallet address
+  createdAt         DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}

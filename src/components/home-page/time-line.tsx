@@ -1,4 +1,3 @@
-import React from "react";
 import { Timeline } from "@/components/ui/timeline";
 
 export function HorseTimeline() {
@@ -26,11 +25,11 @@ export function HorseTimeline() {
             ),
         },
         {
-            title: "December 2025",
+            title: "January 2026",
             content: (
                 <div>
                     <div className="mb-6 inline-block rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-2 backdrop-blur-sm border border-blue-500/20">
-                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Dec 20, 2025</p>
+                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Jan 1, 2026</p>
                     </div>
                     <div className="ml-4 space-y-3 mb-8">
                         <div className="flex items-start gap-3 rounded-lg bg-neutral-50/50 p-4 transition-all hover:bg-neutral-100/50 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/50">
@@ -56,7 +55,7 @@ export function HorseTimeline() {
                     </div>
 
                     <div className="mb-6 inline-block rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-2 backdrop-blur-sm border border-blue-500/20">
-                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Dec 25, 2025</p>
+                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Jan 5, 2026</p>
                     </div>
                     <div className="ml-4 space-y-3 mb-8">
                         <div className="flex items-start gap-3 rounded-lg bg-neutral-50/50 p-4 transition-all hover:bg-neutral-100/50 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/50">
@@ -72,7 +71,7 @@ export function HorseTimeline() {
                     </div>
 
                     <div className="mb-6 inline-block rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-2 backdrop-blur-sm border border-blue-500/20">
-                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Dec 27, 2025</p>
+                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Jan 5, 2026</p>
                     </div>
                     <div className="ml-4 space-y-3">
                         <div className="flex items-start gap-3 rounded-lg bg-neutral-50/50 p-4 transition-all hover:bg-neutral-100/50 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/50">

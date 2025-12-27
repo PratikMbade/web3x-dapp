@@ -1,10 +1,10 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Inconsolata } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import PrivyProviderWrapper from "@/components/providers/privy-provider"
 
-const inconsolata = Inconsolata({ subsets: ["latin"] })
+
 
 export const metadata: Metadata = {
   title: "Web3X - BNB Smart Chain Blockchain Platform",
@@ -46,7 +46,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {children}
+          <PrivyProviderWrapper>
+            {children}
+          </PrivyProviderWrapper>
         </ThemeProvider>
       </body>
     </html>

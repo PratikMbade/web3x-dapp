@@ -1,105 +1,147 @@
-/* eslint-disable react-hooks/static-components */
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { motion } from "framer-motion"
+import {
+    LayoutDashboard,
+    Package,
+    MessageSquare,
+    Star,
+    Users,
+    Settings,
+    LogOut,
+    TrendingUp,
+    X,
+    GalleryHorizontalEnd,
+    Coins,
+    Globe,
+    Rocket,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Home, Coins, ShoppingCart, Network, DollarSign, Users, Menu, X } from "lucide-react"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import React from "react"
+import Image from "next/image"
 
-const menuItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Horse Token", href: "/horse-token", icon: Coins },
-    { name: "Buy / Register User Package", href: "/buy-package", icon: ShoppingCart },
-    { name: "Web3X System", href: "/web3x-system", icon: Network },
-    { name: "Income", href: "/income", icon: DollarSign },
-    { name: "User Explorer", href: "/user-explorer", icon: Users },
+const navItems = [
+    { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+    { href: "/dashboard/web3x-system", label: "Web3xSystem", icon: Globe },
+    { href: "/dashboard/horse-token", label: "Horse Token", icon: Coins },
+    { href: "/dashboard/user", label: "User", icon: Users },
+    { href: "/dashboard/user-explorer", label: "User Explorer", icon: GalleryHorizontalEnd },
+    { href: "/dashboard/income", label: "Income", icon: Users },
+    { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
-export function Sidebar() {
+interface AdminSidebarProps {
+    isOpen?: boolean
+    onClose?: () => void
+}
+
+export function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
     const pathname = usePathname()
-    const [isOpen, setIsOpen] = useState(false)
 
-    const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
-        <div className="flex h-full flex-col gap-6 p-6">
-            <div className="flex items-center justify-between">
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                        <Network className="h-6 w-6 text-primary-foreground" />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold">Web3X</h2>
-                        <p className="text-xs text-muted-foreground">Dashboard</p>
-                    </div>
-                </motion.div>
-                {mobile && (
-                    <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="lg:hidden">
-                        <X className="h-5 w-5" />
-                    </Button>
-                )}
-            </div>
 
-            <nav className="flex flex-1 flex-col gap-2">
-                {menuItems.map((item, index) => {
-                    const isActive = pathname === item.href
-                    return (
-                        <motion.div
-                            key={item.href}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                        >
-                            <Link
-                                href={item.href}
-                                onClick={() => mobile && setIsOpen(false)}
-                                className={cn(
-                                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground",
-                                    isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground",
-                                )}
-                            >
-                                <item.icon className="h-5 w-5" />
-                                <span className="text-balance">{item.name}</span>
-                            </Link>
-                        </motion.div>
-                    )
-                })}
-            </nav>
+    const handleNavClick = () => {
+        if (onClose) {
+            onClose()
+        }
+    }
 
-            <div className="mt-auto border-t pt-4">
-                <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Theme</span>
-                </div>
-            </div>
-        </div>
-    )
+    const handleLogout = async () => {
+        window.location.href = '/admin-signin';
+    }
 
     return (
         <>
-            {/* Mobile Sidebar */}
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="fixed left-4 top-4 z-40 lg:hidden">
-                        <Menu className="h-6 w-6" />
-                        <span className="sr-only">Toggle menu</span>
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-72 p-0">
-                    <SidebarContent mobile />
-                </SheetContent>
-            </Sheet>
+            {isOpen && <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden" onClick={onClose} />}
 
-            {/* Desktop Sidebar */}
-            <motion.aside
-                initial={{ x: -280 }}
-                animate={{ x: 0 }}
-                transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                className="fixed left-0 top-0 z-30 hidden h-screen w-72 border-r bg-sidebar lg:block"
+            <aside
+                className={cn(
+                    "fixed left-0 top-0 z-50 flex h-screen w-[280px] flex-col border-r border-border bg-sidebar transition-transform duration-300 ease-in-out",
+                    // Mobile: transform based on isOpen state
+                    "lg:translate-x-0",
+                    isOpen ? "translate-x-0" : "-translate-x-full",
+                )}
             >
-                <SidebarContent />
-            </motion.aside>
+                {/* Logo */}
+                <div className="flex h-16 items-center justify-between border-b border-border px-6">
+                    <div className="flex items-center gap-3">
+                        <div className="flex  items-center justify-center ">
+                            <Image
+                                src="/Web3x7.png"
+                                alt="Web3X Logo"
+                                width={100}
+                                height={100}
+                            />
+                        </div>
+                    
+                    </div>
+                    <Button variant="ghost" size="icon" className="lg:hidden" onClick={onClose}>
+                        <X className="h-5 w-5" />
+                    </Button>
+                </div>
+
+                {/* Navigation */}
+                <nav className="flex-1 space-y-1 p-4">
+                    {navItems.map((item) => {
+                        const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
+                        const Icon = item.icon
+
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={handleNavClick}
+                                className={cn(
+                                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                                    isActive
+                                        ? "bg-sidebar-accent text-sidebar-primary"
+                                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                                )}
+                            >
+                                <Icon className={cn("h-5 w-5", isActive && "text-sidebar-primary")} />
+                                {item.label}
+                            </Link>
+                        )
+                    })}
+                </nav>
+
+                {/* User Profile */}
+                <div className="border-t border-border p-4">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="w-full justify-start gap-3 px-3 py-6 hover:bg-sidebar-accent">
+
+                                <Avatar className="h-9 w-9">
+                                    <AvatarImage src={''} />
+                                    <AvatarFallback>{"PB"}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col items-start">
+                                </div>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuItem>
+                                <Settings className="mr-2 h-4 w-4" />
+                                Account Settings
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Log out
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </aside>
         </>
     )
 }

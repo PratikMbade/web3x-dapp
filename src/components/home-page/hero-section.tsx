@@ -21,7 +21,7 @@ export function HeroSection() {
     })
 
     useEffect(() => {
-        const targetDate = new Date('2025-12-27T21:00:00+05:30') // 9:00 PM IST
+        const targetDate = new Date('2026-01-01T21:00:00+05:30') // 9:00 PM IST
 
         const calculateTimeLeft = () => {
             const now = new Date()
@@ -143,7 +143,7 @@ export function HeroSection() {
                                 transition={{ delay: 1.1 }}
                                 className="text-xs sm:text-sm text-muted-foreground mt-4"
                             >
-                                December 27, 2025 • 9:00 PM IST
+                                Jan 1, 2026 • 9:00 PM IST
                             </motion.p>
                         </div>
                     </motion.div>
@@ -182,7 +182,7 @@ export function HeroSection() {
                             className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 rounded-full font-semibold shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all"
                             asChild
                         >
-                            <a href="https://t.me/web3x" target="_blank" rel="noopener noreferrer">
+                            <a href="https://t.me/Web3XSpaceOfficial" target="_blank" rel="noopener noreferrer">
                                 Join Telegram Group
                             </a>
                         </Button>
@@ -192,7 +192,7 @@ export function HeroSection() {
                             className="text-lg px-8 py-6 rounded-full font-semibold border-2 hover:bg-primary/10 transition-all bg-transparent"
                             asChild
                         >
-                            <a href="https://whatsapp.com/channel/web3x" target="_blank" rel="noopener noreferrer">
+                            <a href="https://whatsapp.com/channel/0029Vb77h3f2kNFl47oQFQ3U" target="_blank" rel="noopener noreferrer">
                                 Join WhatsApp Channel
                             </a>
                         </Button>

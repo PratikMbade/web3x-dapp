@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 
 import { useState, useEffect } from "react"
@@ -6,13 +7,15 @@ import { Menu, X, Sun, Moon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import WalletConnect from "../ui/wallet-connect"
+
 
 const navItems = [
-    { name: "Platform", href: "#platform" },
-    { name: "Ecosystem", href: "#features" },
-    { name: "Community", href: "#join" },
-    { name: "Smart Contracts", href: "#how-it-works" },
-    { name: "Marketing", href: "#roadmap" },
+    { name: "Platform", href: "/#platform" },
+    { name: "Ecosystem", href: "/#roadmap" },
+    { name: "Community", href: "/#join" },
+    { name: "Smart Contracts", href: "/#how-it-works" },
+    { name: "Marketing", href: "/marketing" },
 ]
 
 export function Navbar() {
@@ -20,6 +23,9 @@ export function Navbar() {
     const [scrolled, setScrolled] = useState(false)
     const { theme, setTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
+
+
+
 
     useEffect(() => {
         setMounted(true)
@@ -42,7 +48,7 @@ export function Navbar() {
                 <div className="flex items-center justify-between h-16 md:h-20">
                     {/* Logo */}
                     <motion.a
-                        href="#"
+                        href="/"
                         className="flex items-center space-x-2"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -77,10 +83,16 @@ export function Navbar() {
                                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                             </Button>
                         )}
-                        <Button variant="ghost" className="font-medium">
-                            Login
+
+                    
+
+                        <>
+                        {/* <WalletConnect /> */}
+                        <Button variant="outline" className="font-medium bg-transparent">
+                            Register
                         </Button>
-                        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium">Register</Button>
+                        </>
+
                     </div>
 
                     {/* Mobile Menu Button */}
