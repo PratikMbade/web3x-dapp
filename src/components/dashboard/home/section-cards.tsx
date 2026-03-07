@@ -1,3 +1,5 @@
+'use client';
+
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -10,20 +12,18 @@ import {
 } from "@/components/ui/card"
 import Image from "next/image"
 import { Clock } from "lucide-react"
+import { useHorseTokenBalance } from "@/hooks/useHorseTokenBalance"
 
 export function SectionCards() {
+    const { balance, loading } = useHorseTokenBalance();
+
     return (
         <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-3">
 
             {/* Active M&N Plan */}
             <Card className="w-full h-72 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
-                    <Image
-                        src="/explorer.png"
-                        alt="explorer"
-                        fill
-                        className="object-fill"
-                    />
+                    <Image src="/explorer.png" alt="explorer" fill className="object-fill" />
                 </div>
                 <CardHeader className="relative z-10">
                     <CardDescription>Active M&N Plan</CardDescription>
@@ -46,13 +46,7 @@ export function SectionCards() {
             {/* Active Highest Level NFT */}
             <Card className="w-full relative overflow-hidden">
                 <div className="absolute inset-0 left-[50%] top-[20%] right-7 opacity-20 pointer-events-none">
-                    <Image
-                        src="/just-creator.png"
-                        alt="just-creator"
-                        height={250}
-                        width={250}
-                        className="object-cover"
-                    />
+                    <Image src="/just-creator.png" alt="just-creator" height={250} width={250} className="object-cover" />
                 </div>
                 <CardHeader className="relative z-10">
                     <CardDescription>Active Highest Level NFT</CardDescription>
@@ -76,18 +70,16 @@ export function SectionCards() {
             {/* Horse Token */}
             <Card className="w-full relative overflow-hidden">
                 <div className="absolute inset-0 left-[50%] top-[20%] right-7 opacity-30 pointer-events-none">
-                    <Image
-                        src="/horse-token-img.png"
-                        alt="horse-token"
-                        height={250}
-                        width={250}
-                        className="object-cover"
-                    />
+                    <Image src="/horse-token-img.png" alt="horse-token" height={250} width={250} className="object-cover" />
                 </div>
                 <CardHeader className="relative z-10">
                     <CardDescription>Horse Token</CardDescription>
                     <CardTitle className="text-4xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                        0 HRT
+                        {loading ? (
+                            <span className="text-muted-foreground/50 text-2xl">Loading...</span>
+                        ) : (
+                            `${balance} HRT`
+                        )}
                     </CardTitle>
                     <CardAction>
                         <Badge variant="outline" className="text-muted-foreground border-dashed">

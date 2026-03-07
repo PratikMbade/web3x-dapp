@@ -14,11 +14,11 @@ import {
   Globe,
   Lock,
   ArrowLeft,
-  Sparkles,
   Users,
   TrendingUp,
   CheckCircle2,
   Coins,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,82 +40,33 @@ import { RegisterUserByAddType, saveUserInDB } from '@/actions/user';
 import Link from 'next/link';
 import { ParticlesBackground } from '@/components/home-page/particles-background';
 
-const AnimatedBackground = () => {
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      {/* Gradient orbs */}
-      <motion.div
-        className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500/50 rounded-full blur-3xl"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: 'easeInOut',
-        }}
-      />
-      <motion.div
-        className="absolute -bottom-40 -left-40 w-80 h-80 bg-orange-600/60 rounded-full blur-3xl"
-        animate={{
-          scale: [1.2, 1, 1.2],
-          opacity: [0.5, 0.3, 0.5],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: 'easeInOut',
-        }}
-      />
-      <motion.div
-        className="absolute top-1/2 left-1/2 w-96 h-96 bg-amber-500/30 rounded-full blur-3xl"
-        animate={{
-          x: [0, 100, 0],
-          y: [0, -100, 0],
-        }}
-        transition={{
-          duration: 15,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: 'easeInOut',
-        }}
-      />
-
-      {/* Grid pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '60px 60px',
-        }}
-      />
-    </div>
-  );
-};
-
-// Feature cards for the left side
+// ─── Feature Card ──────────────────────────────────────────────────────────────
 const FeatureCard = ({ icon: Icon, title, description, delay }: any) => (
   <motion.div
     initial={{ opacity: 0, x: -20 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ delay, duration: 0.5 }}
-    className="bg-orange-500/10 backdrop-blur-sm border border-white/10 rounded-2xl p-3 hover:bg-orange-500/20 transition-all duration-300"
+    className="group flex items-start gap-3 bg-white/5 hover:bg-white/8 border border-white/10 hover:border-orange-500/30 rounded-xl p-4 transition-all duration-300"
   >
-    <div className="flex items-start gap-4">
-      <div className="p-2 bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-xl">
-        <Icon className="w-6 h-6 text-white" />
-      </div>
-      <div className="flex-1">
-        <h3 className="text-white font-semibold mb-1">{title}</h3>
-        <p className="text-slate-400 text-sm">{description}</p>
-      </div>
+    <div className="shrink-0 mt-0.5 p-2 bg-gradient-to-br from-orange-500/20 to-amber-500/10 rounded-lg group-hover:from-orange-500/30 transition-all duration-300">
+      <Icon className="w-4 h-4 text-orange-400" />
+    </div>
+    <div>
+      <h3 className="text-white text-sm font-semibold mb-0.5">{title}</h3>
+      <p className="text-slate-400 text-xs leading-relaxed">{description}</p>
     </div>
   </motion.div>
 );
 
+// ─── Trust Badge ───────────────────────────────────────────────────────────────
+const TrustBadge = ({ icon: Icon, label, color }: any) => (
+  <div className="flex items-center gap-1.5 text-slate-400">
+    <Icon className={`w-3.5 h-3.5 ${color}`} />
+    <span className="text-xs">{label}</span>
+  </div>
+);
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 export interface RegisterTypes {
   wallet_address: string;
   sponser_address: string;
@@ -126,32 +77,21 @@ export interface RegisterInputType {
   referral_address: string;
 }
 
-function isSuccessResponse(
-  response: SigninResponse
-): response is SuccessResponse {
+function isSuccessResponse(response: SigninResponse): response is SuccessResponse {
   return 'success' in response && response.success;
 }
 
-interface SuccessResponse {
-  success: boolean;
-}
-
-interface ErrorResponse {
-  error: any;
-}
-
-interface ValueTypes {
-  publicAddress: string;
-}
+interface SuccessResponse { success: boolean; }
+interface ErrorResponse { error: any; }
 type SigninResponse = SuccessResponse | ErrorResponse;
 
+// ─── Main Component ────────────────────────────────────────────────────────────
 export default function RegistrationMain() {
   const params = useSearchParams();
   const url = params.get('rr');
   const [queryUrl, setQueryUrl] = useState<string>();
   const [activeTab, setActiveTab] = useState<'new' | 'existing'>('new');
-  const [registerInputValue, setRegisterInputValue] =
-    useState<RegisterInputType>({ referral_address: '' });
+  const [registerInputValue, setRegisterInputValue] = useState<RegisterInputType>({ referral_address: '' });
   const activeAccount = useActiveAccount();
   const [isPending, setIsPending] = useState(false);
   const { connect, isConnecting } = useConnect();
@@ -162,22 +102,13 @@ export default function RegistrationMain() {
 
   const router = useRouter();
 
+  // ─── Logic (unchanged) ──────────────────────────────────────────────────────
   const getProperCaseAddress = async (currentAddress: string) => {
     try {
-      if (!activeAccount?.address) {
-        toast('Connect your wallet', { icon: 'ℹ️' });
-        return;
-      }
-      console.log('currentAddress', currentAddress);
-
+      if (!activeAccount?.address) { toast('Connect your wallet', { icon: 'ℹ️' }); return; }
       const contractInst = await contractInstance(activeAccount);
-
       const regIdRes = await contractInst.RegisterUserByAdd(currentAddress);
-
       const regId = regIdRes.toString();
-
-      console.log('regIdRes', regId);
-
       const res = await contractInst.RegisterUerById(regId);
       const formattedUser = ethers.utils.getAddress(res._user);
       const formattedResponse: RegisterUserByAddType = {
@@ -187,9 +118,6 @@ export default function RegistrationMain() {
         uplineId: res._uplineid.toString(),
         teamCount: res._teamcount.toString(),
       };
-      console.log('formattedResponse', formattedResponse);
-
-      console.log('new address proper', formattedResponse.user);
       return formattedResponse.user;
     } catch (error) {
       console.log('error in getProperCaseAddress: ', error);
@@ -197,27 +125,13 @@ export default function RegistrationMain() {
     }
   };
 
-
-
-
-
   const isReferralAvalibale = async (wallet_address: string) => {
     try {
-      console.log('wallet addrss', wallet_address);
       const res = await verifySponsor(wallet_address);
-
-      if (res.success == true) {
-        console.log('yes irs verified');
-        setSuccess(res.msg);
-        setError(null);
-
-        return true;
-      }
-
+      if (res.success == true) { setSuccess(res.msg); setError(null); return true; }
       toast.error(res.msg);
       setError(res.msg);
       setSuccess(null);
-
       return false;
     } catch (error) {
       setError('something went wrong');
@@ -229,477 +143,324 @@ export default function RegistrationMain() {
   const handleNoSponser = async () => {
     try {
       setIsPending(true);
-      const developerSponser: RegisterInputType = {
-        referral_address: '0x2C7f4dB6A0B1df04EA8550c219318C7f2FF3D34C'.toLowerCase(),
-      };
-
+      const developerSponser: RegisterInputType = { referral_address: '0x2C7f4dB6A0B1df04EA8550c219318C7f2FF3D34C'.toLowerCase() };
       setRegisterInputValue(developerSponser);
-
-      const isProcessed = await registerInSmartContract(
-        developerSponser.referral_address
-      );
-    } catch (error) {
-      setIsPending(false);
-    } finally {
-      setIsPending(false);
-    }
+      await registerInSmartContract(developerSponser.referral_address);
+    } catch (error) { setIsPending(false); } finally { setIsPending(false); }
   };
 
-const registerInSmartContract = async (properAddress: string) => {
-  try {
-    if (!activeAccount?.address) {
-      toast('Connect your wallet', { icon: 'ℹ️' });
-      return false;
-    }
-
-    setIsFormSubmitted(true);
-
-    const contractInst = await contractInstance(activeAccount);
-
-    // Check if user already registered
-    const isRegistered = await contractInst.register(activeAccount.address);
-    if (isRegistered) {
-      toast.error('User Already Registered!');
-      return false;
-    }
-
-    // Check referral exists
-    if (properAddress.toLowerCase() !== '0x07a132a5F132619A9EA0A97e650F30d760C96b53'.toLowerCase()) {
-      const isReferralExist = await contractInst.register(properAddress);
-      if (!isReferralExist) {
-        toast.error('Referral Not Registered!');
+  const registerInSmartContract = async (properAddress: string) => {
+    try {
+      if (!activeAccount?.address) { toast('Connect your wallet', { icon: 'ℹ️' }); return false; }
+      setIsFormSubmitted(true);
+      const contractInst = await contractInstance(activeAccount);
+      const isRegistered = await contractInst.register(activeAccount.address);
+      if (isRegistered) { toast.error('User Already Registered!'); return false; }
+      if (properAddress.toLowerCase() !== '0x07a132a5F132619A9EA0A97e650F30d760C96b53'.toLowerCase()) {
+        const isReferralExist = await contractInst.register(properAddress);
+        if (!isReferralExist) { toast.error('Referral Not Registered!'); return false; }
+      }
+      const signer = await ethers5Adapter.signer.toEthers({ client, chain: MainnetChain, account: activeAccount! });
+      if (!signer) { toast.error('Signer not available'); return false; }
+      const usdtAddress = "0x55d398326f99059fF775485246999027B3197955";
+      const regFee = await contractInst.regFee();
+      const usdtAbi = [
+        'function balanceOf(address) view returns (uint256)',
+        'function allowance(address owner, address spender) view returns (uint256)',
+        'function approve(address spender, uint256 amount) returns (bool)',
+        'function decimals() view returns (uint8)',
+      ];
+      const usdtContract = new ethers.Contract(usdtAddress, usdtAbi, signer);
+      const decimals = await usdtContract.decimals();
+      const usdtBalance = await usdtContract.balanceOf(activeAccount.address);
+      if (usdtBalance.lt(regFee)) {
+        const required = ethers.utils.formatUnits(regFee, decimals);
+        const current = ethers.utils.formatUnits(usdtBalance, decimals);
+        toast.error(`Insufficient USDT. You have ${parseFloat(current).toFixed(2)} USDT but need ${required} USDT.`);
         return false;
       }
-    }
-
-    const signer = await ethers5Adapter.signer.toEthers({
-      client,
-      chain: MainnetChain,
-      account: activeAccount!,
-    });
-
-    if (!signer) {
-      toast.error('Signer not available');
-      return false;
-    }
-
-    // Get USDT token address from contract
-    const usdtAddress = "0x55d398326f99059fF775485246999027B3197955"
-    console.log('Fee Token (USDT) address:', usdtAddress);
-
-    // Get registration fee
-    const regFee = await contractInst.regFee();
-    console.log('regFee:', ethers.utils.formatUnits(regFee, 18));
-
-    // Create USDT contract instance
-    const usdtAbi = [
-      'function balanceOf(address) view returns (uint256)',
-      'function allowance(address owner, address spender) view returns (uint256)',
-      'function approve(address spender, uint256 amount) returns (bool)',
-      'function decimals() view returns (uint8)',
-    ];
-    const usdtContract = new ethers.Contract(usdtAddress, usdtAbi, signer);
-
-    const decimals = await usdtContract.decimals();
-    console.log('USDT decimals:', decimals);
-
-    // Check USDT balance
-    const usdtBalance = await usdtContract.balanceOf(activeAccount.address);
-    console.log('USDT balance:', ethers.utils.formatUnits(usdtBalance, decimals));
-
-    if (usdtBalance.lt(regFee)) {
-      const required = ethers.utils.formatUnits(regFee, decimals);
-      const current = ethers.utils.formatUnits(usdtBalance, decimals);
-      toast.error(`Insufficient USDT. You have ${parseFloat(current).toFixed(2)} USDT but need ${required} USDT.`);
-      return false;
-    }
-
-    // Check current allowance
-    const contractAddress = contractInst.address;
-    const allowance = await usdtContract.allowance(activeAccount.address, contractAddress);
-
-    // Approve if needed
-    if (allowance.lt(regFee)) {
-      toast('Approving USDT... Please confirm in your wallet', { icon: 'ℹ️' });
-
-      const approveTx = await usdtContract.approve(contractAddress, regFee);
-      console.log('Approve tx sent:', approveTx.hash);
-
-      const approveReceipt = await approveTx.wait();
-      if (!approveReceipt || approveReceipt.status !== 1) {
-        toast.error('USDT approval failed. Please try again.');
-        return false;
+      const contractAddress = contractInst.address;
+      const allowance = await usdtContract.allowance(activeAccount.address, contractAddress);
+      if (allowance.lt(regFee)) {
+        toast('Approving USDT... Please confirm in your wallet', { icon: 'ℹ️' });
+        const approveTx = await usdtContract.approve(contractAddress, regFee);
+        const approveReceipt = await approveTx.wait();
+        if (!approveReceipt || approveReceipt.status !== 1) { toast.error('USDT approval failed. Please try again.'); return false; }
+        toast.success('USDT approved! Now registering...');
       }
-
-      console.log('USDT approved successfully');
-      toast.success('USDT approved! Now registering...');
-    }
-
-    // Estimate gas for registration
-    // registerUserByToken is payable but fee is in USDT so value = 0
-    const gasEstimate = await contractInst.estimateGas.registerUserByToken(
-      activeAccount.address,
-      properAddress,
-      { value: 0 }
-    );
-
-    const gasLimit = gasEstimate.mul(110).div(100);
-    const feeData = await signer.provider.getFeeData();
-
-    // Send registration tx
-    toast('Registering... Please confirm in your wallet', { icon: 'ℹ️' });
-
-    const tx = await contractInst.registerUserByToken(
-      activeAccount.address,
-      properAddress,
-      {
-        value: 0,                               // ✅ No BNB needed, fee is USDT
+      const gasEstimate = await contractInst.estimateGas.registerUserByToken(activeAccount.address, properAddress, { value: 0 });
+      const gasLimit = gasEstimate.mul(110).div(100);
+      const feeData = await signer.provider.getFeeData();
+      toast('Registering... Please confirm in your wallet', { icon: 'ℹ️' });
+      const tx = await contractInst.registerUserByToken(activeAccount.address, properAddress, {
+        value: 0,
         gasLimit,
         maxFeePerGas: feeData.maxFeePerGas!,
         maxPriorityFeePerGas: feeData.maxPriorityFeePerGas!,
+      });
+      const receipt = await tx.wait();
+      if (receipt && receipt.status === 1) {
+        const regIdRes = await contractInst.RegisterUserByAdd(activeAccount.address);
+        const regId = regIdRes.toString();
+        const res = await contractInst.RegisterUerById(regId);
+        const formattedUser = ethers.utils.getAddress(res._user);
+        const formattedResponse: RegisterUserByAddType = {
+          regId: regId,
+          user: formattedUser,
+          upline: ethers.utils.getAddress(res._upline),
+          uplineId: res._uplineid.toString(),
+          teamCount: res._teamcount.toString(),
+        };
+        await registerUser(formattedResponse);
       }
-    );
-
-    console.log('Registration tx sent:', tx.hash);
-    const receipt = await tx.wait();
-
-    if (receipt && receipt.status === 1) {
-      const regIdRes = await contractInst.RegisterUserByAdd(activeAccount.address);
-      const regId = regIdRes.toString();
-
-      const res = await contractInst.RegisterUerById(regId);
-      const formattedUser = ethers.utils.getAddress(res._user);
-
-      const formattedResponse: RegisterUserByAddType = {
-        regId: regId,
-        user: formattedUser,
-        upline: ethers.utils.getAddress(res._upline),
-        uplineId: res._uplineid.toString(),
-        teamCount: res._teamcount.toString(),
-      };
-
-      await registerUser(formattedResponse);
+      return true;
+    } catch (error) {
+      console.error('registerInSmartContract error:', error);
+      setIsPending(false);
+      const lower = String((error as any)?.message || '').toLowerCase();
+      if (lower.includes('insufficient funds')) {
+        toast.error('Insufficient BNB for gas fees. You need a small amount of BNB to pay gas.');
+      } else if (lower.includes('user rejected') || lower.includes('denied')) {
+        toast.error('Transaction rejected.');
+      } else if ((error as any)?.reason) {
+        toast.error((error as any).reason);
+      } else {
+        toast.error('Registration failed. Please try again.');
+      }
+      return false;
     }
-
-    return true;
-  } catch (error) {
-    console.error('registerInSmartContract error:', error);
-    setIsPending(false);
-
-    const lower = String((error as any)?.message || '').toLowerCase();
-
-    if (lower.includes('insufficient funds')) {
-      toast.error('Insufficient BNB for gas fees. You need a small amount of BNB to pay gas.');
-    } else if (lower.includes('user rejected') || lower.includes('denied')) {
-      toast.error('Transaction rejected.');
-    } else if ((error as any)?.reason) {
-      toast.error((error as any).reason);
-    } else {
-      toast.error('Registration failed. Please try again.');
-    }
-
-    return false;
-  }
-};
+  };
 
   const registerUser = async (data: RegisterUserByAddType) => {
     try {
       const res = await saveUserInDB(data);
-      const json = res;
-
-      if (json.status === 200) {
+      if (res.status === 200) {
         setIsPending(false);
-         await createSessionAndRedirect();
-        toast.success('User registered successfully ');
+        await createSessionAndRedirect();
+        toast.success('User registered successfully');
       } else {
-        toast.error(`Backend error: ${json.msg}`);
+        toast.error(`Backend error: ${res.msg}`);
       }
-
-      return;
     } catch (error) {
       console.error('Registration error:', error);
       setIsPending(false);
+      if (error instanceof Error) { toast.error(`Registration failed: ${error.message}`); }
+      else { toast.error('Registration failed: Unknown error'); }
+    } finally { setIsPending(false); }
+  };
 
-      if (error instanceof Error) {
-        toast.error(`Registration failed: ${error.message}`);
-      } else {
-        toast.error('Registration failed: Unknown error');
-      }
-    } finally {
-      setIsPending(false);
+  const createSessionAndRedirect = async () => {
+    try {
+      if (!activeAccount?.address) return;
+      const message = `Sign in to Web3x\nWallet: ${activeAccount.address}\nTimestamp: ${Date.now()}`;
+      const signature = await activeAccount.signMessage({ message });
+      const authRes = await fetch('/api/auth/wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: activeAccount.address, signature, message }),
+      });
+      const authData = await authRes.json();
+      if (authData.success) { toast.success('Registration successful! Redirecting...'); router.push('/dashboard'); }
+      else { toast.error('Session creation failed. Please log in manually.'); router.push('/login'); }
+    } catch (error) {
+      console.error('Session creation error:', error);
+      toast.error('Could not create session. Please log in manually.');
+      router.push('/login');
     }
   };
 
   const handleBelieverRegistration = (e: ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    setRegisterInputValue((prev: RegisterInputType) => ({
-      ...prev,
-      [id]: value,
-    }));
+    setRegisterInputValue((prev: RegisterInputType) => ({ ...prev, [id]: value }));
   };
-
-    const createSessionAndRedirect = async () => {
-  try {
-    if (!activeAccount?.address) return;
-
-    // Sign a message to authenticate
-    const message = `Sign in to Web3x\nWallet: ${activeAccount.address}\nTimestamp: ${Date.now()}`;
-
-    const signature = await activeAccount.signMessage({ message });
-
-    // Call wallet auth endpoint to create session
-    const authRes = await fetch('/api/auth/wallet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        address: activeAccount.address,
-        signature,
-        message,
-      }),
-    });
-
-    const authData = await authRes.json();
-
-    if (authData.success) {
-      toast.success('Registration successful! Redirecting...');
-      router.push('/dashboard');
-    } else {
-      toast.error('Session creation failed. Please log in manually.');
-      router.push('/login');
-    }
-  } catch (error) {
-    console.error('Session creation error:', error);
-    toast.error('Could not create session. Please log in manually.');
-    router.push('/login');
-  }
-};
 
   const onSubmit = async (e: ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsPending(true);
-    console.log('registerInputValue', registerInputValue);
-
-    const properAddress = await getProperCaseAddress(
-      registerInputValue.referral_address
-    );
-
+    const properAddress = await getProperCaseAddress(registerInputValue.referral_address);
     try {
-      console.log('proper', properAddress);
-
-      if (!properAddress) {
-        toast.error('Sponsor address invalid');
-        return;
-      }
-
+      if (!properAddress) { toast.error('Sponsor address invalid'); return; }
       const isSponserVerified = await isReferralAvalibale(properAddress!);
-
-      if (!isSponserVerified) {
-        return;
-      }
-
-      const isProcessed = await registerInSmartContract(properAddress!);
-    } catch (error) {
-      setIsPending(false);
-    } finally {
-      setIsPending(false);
-    }
+      if (!isSponserVerified) return;
+      await registerInSmartContract(properAddress!);
+    } catch (error) { setIsPending(false); } finally { setIsPending(false); }
   };
 
   useEffect(() => {
-    if (url) {
-      setQueryUrl(url);
-      setRegisterInputValue({ referral_address: url });
-      setHasUpline(true);
-      console.log('url', url);
-    }
+    if (url) { setQueryUrl(url); setRegisterInputValue({ referral_address: url }); setHasUpline(true); }
   }, [url]);
 
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10 relative overflow-hidden">
-            <ParticlesBackground />
+      <ParticlesBackground />
 
-      {/* Loading Overlay */}
-      {isPending && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center p-4">
-          <FadeLoader color="#3b82f6" />
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-white font-medium text-center mt-6 max-w-md text-sm md:text-base"
+      {/* ── Loading Overlay ── */}
+      <AnimatePresence>
+        {isPending && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex flex-col items-center justify-center gap-5 px-6"
           >
-            Processing your registration on the blockchain. Please don&#39;t close this window.
-          </motion.p>
-        </div>
-      )}
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl scale-150" />
+              <FadeLoader color="#f97316" />
+            </div>
+            <div className="text-center max-w-sm">
+              <p className="text-white font-semibold text-base mb-1">Processing Registration</p>
+              <p className="text-slate-400 text-sm">
+                Your transaction is being confirmed on the blockchain. Please don&#39;t close this window.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Header */}
-      <div className="relative z-10 p-4 md:p-6">
+      {/* ── Header ── */}
+      <header className="relative z-10 flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4">
         <Link href="/">
-          <Button
-            variant="ghost"
-            className="text-white hover:bg-white/10 border border-white/10"
-          >
-            <ArrowLeft className="mr-2 w-4 h-4" />
+          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 gap-1.5 text-sm">
+            <ArrowLeft className="w-3.5 h-3.5" />
             Back
           </Button>
         </Link>
-      </div>
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+          <span className="text-slate-400 text-xs hidden sm:block">BNB Smart Chain</span>
+        </div>
+      </header>
 
-      {/* Main Content */}
-      <div className="relative z-10 min-h-[calc(80vh-200px)] flex items-center justify-center p-2">
-        <div className="w-full max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+      {/* ── Main Content ── */}
+      <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-80px)] px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-10 xl:gap-16 items-center">
 
-            {/* Left Side - Information */}
+            {/* ── Left: Brand & Info ── */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: -40 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              className="space-y-8"
+              transition={{ duration: 0.7 }}
+              className="space-y-7"
             >
-              {/* Logo & Title */}
-              <div>
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className=""
-                >
-                  <Image
-                    src="/Web3x7.png"
-                    alt="web3x Logo"
-                    width={120}
-                    height={120}
-                    className=""
-                  />
-                </motion.div>
+              {/* Logo */}
+              <motion.div
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Image src="/Web3x7.png" alt="Web3x Logo" width={100} height={100} className="drop-shadow-lg" />
+              </motion.div>
 
-                <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-4xl md:text-4xl lg:text-4xl font-bold text-white mb-4"
-                >
-                  Welcome to
-                  <span className="block bg-gradient-to-r from-orange-500 to-amber-800 bg-clip-text text-transparent">
+              {/* Headline */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <p className="text-orange-400 text-xs font-semibold tracking-widest uppercase mb-3">
+                  Decentralized Ecosystem
+                </p>
+                <h1 className="text-3xl sm:text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
+                  Welcome to{' '}
+                  <span className="bg-gradient-to-r from-orange-400 via-amber-400 to-orange-600 bg-clip-text text-transparent">
                     Web3x
                   </span>
-                </motion.h1>
-
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-slate-300 text-lg max-w-xl"
-                >
+                </h1>
+                <p className="text-slate-400 text-base leading-relaxed max-w-md">
                   The flagship of decentralized systems, offering a wide range of innovative blockchain products and services.
-                </motion.p>
+                </p>
+              </motion.div>
+
+              {/* Feature cards — hidden on mobile */}
+              <div className="hidden lg:flex flex-col gap-3">
+                <FeatureCard icon={Users} title="Team & Sponsor" description="Register with a referral link and build your network with engaged members." delay={0.3} />
+                <FeatureCard icon={TrendingUp} title="Royalty Program" description="Participate and earn rewards while maintaining the balance of our ecosystem." delay={0.4} />
+                <FeatureCard icon={Coins} title="Horse Token" description="Experience seamless transactions with our native token, designed for efficiency and speed." delay={0.5} />
               </div>
 
-              {/* Feature Cards - Hidden on mobile */}
-              <div className="hidden lg:block space-y-4">
-                <FeatureCard
-                  icon={Users}
-                  title="Team & Sponsor"
-                  description="Register with a referral link and build your network with engaged members."
-                  delay={0.5}
-                />
-                <FeatureCard
-                  icon={TrendingUp}
-                  title="Royalty Program"
-                  description="Participate and earn rewards while maintaining the balance of our ecosystem."
-                  delay={0.6}
-                />
-                <FeatureCard
-                  icon={Coins}
-                  title="Horse Token"
-                  description="Experience seamless transactions with our native token, designed for efficiency and speed."
-                  delay={0.7}
-                />
-              </div>
-
-              {/* Trust Indicators */}
+              {/* Trust row */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="flex flex-wrap items-center gap-6 pt-4"
+                transition={{ delay: 0.6 }}
+                className="flex flex-wrap gap-4 pt-1"
               >
-                <div className="flex items-center gap-2 text-slate-400">
-                  <Shield className="w-5 h-5 text-green-400" />
-                  <span className="text-sm">Secure & Audited</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-400">
-                  <Globe className="w-5 h-5 text-blue-400" />
-                  <span className="text-sm">BNB Smart Chain</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-400">
-                  <Zap className="w-5 h-5 text-yellow-400" />
-                  <span className="text-sm">Instant Processing</span>
-                </div>
+                <TrustBadge icon={Shield} label="Secure & Audited" color="text-green-400" />
+                <TrustBadge icon={Globe} label="BNB Smart Chain" color="text-blue-400" />
+                <TrustBadge icon={Zap} label="Instant Processing" color="text-yellow-400" />
               </motion.div>
             </motion.div>
 
-            {/* Right Side - Registration Form */}
+            {/* ── Right: Registration Card ── */}
             <motion.div
-              initial={{ opacity: 0, x: 50 }}
+              initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+              transition={{ duration: 0.7, delay: 0.15 }}
               className="w-full"
             >
-              <Card className="bg-neutral-800/50 backdrop-blur-xl border border-white/10 shadow-2xl">
-                <CardContent className="p-6 md:p-8">
-                  <div className="mb-8">
-                    <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                      Register for Web3x
+              <Card className="bg-neutral-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/40 rounded-2xl overflow-hidden">
+                {/* Card top accent */}
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+
+                <CardContent className="p-6 sm:p-8">
+                  {/* Card header */}
+                  <div className="mb-7">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Sparkles className="w-4 h-4 text-orange-400" />
+                      <span className="text-orange-400 text-xs font-medium tracking-wide uppercase">New Registration</span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">
+                      Join Web3x
                     </h2>
-                    <p className="text-slate-400">
-                      {queryUrl ? 'Complete your registration with your sponsor' : 'Do you already have an Upline?'}
+                    <p className="text-slate-400 text-sm mt-1">
+                      {queryUrl ? 'Complete your registration with your sponsor' : 'Do you already have an upline?'}
                     </p>
                   </div>
 
+                  {/* ── Step: Choose upline or not ── */}
                   {!queryUrl && hasUpline === null ? (
-                    // Initial choice buttons
-                    <div className="space-y-4">
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <div className="space-y-3">
+                      <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                         <Button
                           onClick={() => setHasUpline(true)}
-                          className="w-full h-14 text-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 border-0"
+                          className="w-full h-12 text-base bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold border-0 shadow-lg shadow-orange-500/20"
                         >
                           Yes, I have a sponsor
-                          <ArrowRight className="ml-2 w-5 h-5" />
+                          <ArrowRight className="ml-2 w-4 h-4" />
                         </Button>
                       </motion.div>
 
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                         <Button
                           onClick={() => setHasUpline(false)}
                           variant="outline"
-                          className="w-full h-14 text-lg border-white/20 hover:bg-white/5 text-white"
+                          className="w-full h-12 text-base border border-white/15 hover:bg-white/5 hover:border-white/25 text-slate-300 hover:text-white bg-transparent"
                         >
                           No, register without sponsor
                         </Button>
                       </motion.div>
 
-                      <p className="text-xs text-slate-500 text-center mt-6">
+                      <p className="text-xs text-slate-600 text-center pt-3">
                         By registering, you agree to our terms and conditions
                       </p>
                     </div>
+
                   ) : (
-                    // Form content
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={hasUpline ? 'with-upline' : 'no-upline'}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 14 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }}
+                        exit={{ opacity: 0, y: -14 }}
+                        transition={{ duration: 0.25 }}
                       >
+                        {/* ── With Sponsor Form ── */}
                         {(hasUpline || queryUrl) ? (
-                          // With sponsor form
-                          <form onSubmit={onSubmit} className="space-y-6">
-                            <div className="space-y-2">
-                              <Label htmlFor="referral_address" className="text-white text-sm">
+                          <form onSubmit={onSubmit} className="space-y-5">
+                            <div className="space-y-1.5">
+                              <Label htmlFor="referral_address" className="text-slate-300 text-sm font-medium">
                                 Sponsor Wallet Address
                               </Label>
                               <Input
@@ -708,21 +469,29 @@ const registerInSmartContract = async (properAddress: string) => {
                                 value={queryUrl?.toLowerCase() || registerInputValue.referral_address}
                                 onChange={handleBelieverRegistration}
                                 disabled={!!queryUrl}
-                                className="h-12 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                className="h-11 bg-white/5 border border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/60 focus:ring-1 focus:ring-orange-500/30 rounded-xl text-sm transition-all disabled:opacity-60"
                                 required
                               />
-                              <p className="text-xs text-slate-400 flex items-center gap-1">
+                              <p className="text-xs text-slate-500 flex items-center gap-1 pt-0.5">
                                 <Lock className="w-3 h-3" />
                                 Enter your sponsor&apos;s wallet address
                               </p>
                             </div>
 
+                            {/* Fee notice */}
+                            <div className="flex items-start gap-2.5 bg-orange-500/5 border border-orange-500/15 rounded-xl px-4 py-3">
+                              <Coins className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+                              <p className="text-xs text-slate-400 leading-relaxed">
+                                Registration fee is paid in <span className="text-orange-400 font-medium">USDT</span>. You&apos;ll be prompted to approve USDT and confirm the transaction.
+                              </p>
+                            </div>
+
                             {activeAccount?.address ? (
-                              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                                 <Button
                                   type="submit"
                                   disabled={isPending}
-                                  className="w-full h-12 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold"
+                                  className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-lg shadow-orange-500/20 border-0 text-sm"
                                 >
                                   {isPending ? (
                                     <span className="flex items-center gap-2">
@@ -731,8 +500,8 @@ const registerInSmartContract = async (properAddress: string) => {
                                     </span>
                                   ) : (
                                     <>
+                                      <CheckCircle2 className="w-4 h-4 mr-2" />
                                       Verify & Register
-                                      <CheckCircle2 className="ml-2 w-5 h-5" />
                                     </>
                                   )}
                                 </Button>
@@ -746,31 +515,49 @@ const registerInSmartContract = async (properAddress: string) => {
                                 type="button"
                                 variant="ghost"
                                 onClick={() => setHasUpline(null)}
-                                className="w-full text-slate-400 hover:text-white hover:bg-white/5"
+                                className="w-full text-slate-500 hover:text-slate-300 hover:bg-white/5 text-sm gap-1.5"
                               >
-                                <ArrowLeft className="mr-2 w-4 h-4" />
+                                <ArrowLeft className="w-3.5 h-3.5" />
                                 Go back
                               </Button>
                             )}
                           </form>
+
                         ) : (
-                          // Without sponsor
-                          <div className="space-y-6">
-                            <div className="bg-neutral-800/90 border border-neutral-500/20 rounded-xl p-4">
-                              <p className="text-sm text-white">
-                                You&rsquo;ll be registered with the default developer sponsor address.
+                          /* ── Without Sponsor ── */
+                          <div className="space-y-5">
+                            <div className="bg-white/4 border border-white/8 rounded-xl p-4">
+                              <p className="text-slate-300 text-sm leading-relaxed">
+                                You&rsquo;ll be registered under the default developer sponsor address. The registration fee still applies.
+                              </p>
+                            </div>
+
+                            {/* Fee notice */}
+                            <div className="flex items-start gap-2.5 bg-orange-500/5 border border-orange-500/15 rounded-xl px-4 py-3">
+                              <Coins className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+                              <p className="text-xs text-slate-400 leading-relaxed">
+                                Registration fee is paid in <span className="text-orange-400 font-medium">USDT</span>. Ensure you have sufficient USDT balance.
                               </p>
                             </div>
 
                             {activeAccount?.address ? (
-                              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                                 <Button
                                   onClick={handleNoSponser}
                                   disabled={isPending}
-                                  className="w-full h-12 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold"
+                                  className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-lg shadow-orange-500/20 border-0 text-sm"
                                 >
-                                  {isPending ? 'Processing...' : 'Register Now'}
-                                  <ArrowRight className="ml-2 w-5 h-5" />
+                                  {isPending ? (
+                                    <span className="flex items-center gap-2">
+                                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                      Processing...
+                                    </span>
+                                  ) : (
+                                    <>
+                                      Register Now
+                                      <ArrowRight className="ml-2 w-4 h-4" />
+                                    </>
+                                  )}
                                 </Button>
                               </motion.div>
                             ) : (
@@ -781,9 +568,9 @@ const registerInSmartContract = async (properAddress: string) => {
                               type="button"
                               variant="ghost"
                               onClick={() => setHasUpline(null)}
-                              className="w-full text-slate-400 hover:text-white hover:bg-white/5"
+                              className="w-full text-slate-500 hover:text-slate-300 hover:bg-white/5 text-sm gap-1.5"
                             >
-                              <ArrowLeft className="mr-2 w-4 h-4" />
+                              <ArrowLeft className="w-3.5 h-3.5" />
                               Go back
                             </Button>
                           </div>
@@ -792,46 +579,44 @@ const registerInSmartContract = async (properAddress: string) => {
                     </AnimatePresence>
                   )}
 
-                  {/* Bottom info */}
-                  <div className="mt-8 pt-6 border-t border-white/10">
-                    <p className="text-xs text-slate-500 text-center">
-                      Need help using the Meta Whale platform?{' '}
-                      <Link href="/support" className="text-blue-400 hover:text-blue-300">
-                        Contact Support
+                  {/* Card footer */}
+                  <div className="mt-7 pt-5 border-t border-white/8">
+                    <p className="text-xs text-slate-600 text-center">
+                      Need help?{' '}
+                      <Link
+                        href="https://t.me/Web3XSpaceOfficial"
+                        target="_blank"
+                        className="text-orange-400/80 hover:text-orange-400 transition-colors"
+                      >
+                        Contact Support on Telegram
                       </Link>
                     </p>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Mobile Feature Cards */}
-              <div className="lg:hidden mt-6 space-y-3">
-                <FeatureCard
-                  icon={Users}
-                  title="Team & Sponsor"
-                  description="Build your network with engaged members"
-                  delay={0.5}
-                />
-                <FeatureCard
-                  icon={TrendingUp}
-                  title="Royalty Program"
-                  description="Earn rewards in our ecosystem"
-                  delay={0.6}
-                />
+              {/* Mobile feature cards */}
+              <div className="lg:hidden mt-5 grid sm:grid-cols-2 gap-3">
+                <FeatureCard icon={Users} title="Team & Sponsor" description="Build your network with engaged members" delay={0.3} />
+                <FeatureCard icon={TrendingUp} title="Royalty Program" description="Earn rewards in our ecosystem" delay={0.4} />
               </div>
             </motion.div>
+
           </div>
         </div>
-      </div>
+      </main>
 
-      {/* Footer */}
+      {/* ── Footer ── */}
       <motion.footer
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
-        className="relative z-10 text-center py-6 text-slate-500 text-xs"
+        className="relative z-10 text-center py-5 px-4"
       >
-        © 2026 Web3X. Built on BNB Smart Chain for the future of Web3.
+        <p className="text-slate-600 text-xs">
+          © 2026 Web3X · Built on BNB Smart Chain ·{' '}
+          <span className="text-slate-500">All rights reserved</span>
+        </p>
       </motion.footer>
     </div>
   );

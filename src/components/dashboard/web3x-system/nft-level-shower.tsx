@@ -102,7 +102,8 @@ export default function NFTLevelShower({ nftData }: { nftData: UserNFTs | null }
                     {network.name}
                   </h2>
                   <p className="text-slate-400 text-sm mt-1">
-                    Current Tier: {tierNames[nftData?.tokenType ?? 0] || 'None'}
+                    {/* Current Tier: {tierNames[nftData?.tokenType ?? 0] || 'None'} */}
+                    
                   </p>
                 </div>
               </motion.div>
@@ -110,7 +111,7 @@ export default function NFTLevelShower({ nftData }: { nftData: UserNFTs | null }
               <Link href="/dashboard/nft">
                 <Button className="group relative rounded-xl px-8 py-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 transition-all hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105">
                   <span className="flex items-center gap-2">
-                    Manage NFTs
+                    Comming Soon
                     <Crown className="w-5 h-5 group-hover:scale-110 transition-transform" />
                   </span>
                 </Button>
@@ -280,7 +281,8 @@ export default function NFTLevelShower({ nftData }: { nftData: UserNFTs | null }
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                 <p className="text-slate-400 text-sm mb-1">Current Tier</p>
                 <p className="text-2xl font-bold text-white">
-                  {tierNames[nftData?.tokenType ?? 0] || 'None'}
+                  {/* {tierNames[nftData?.tokenType ?? 0] || 'None'} */}
+                    None
                 </p>
               </div>
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
@@ -290,7 +292,8 @@ export default function NFTLevelShower({ nftData }: { nftData: UserNFTs | null }
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                 <p className="text-slate-400 text-sm mb-1">Completion</p>
                 <p className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  {Math.round(((nftData?.tokenType ?? 0) + 1) / 6 * 100)}%
+                  {/* {Math.round(((nftData?.tokenType ?? 0) + 1) / 6 * 100)}% */}
+                  <span>0%</span>
                 </p>
               </div>
             </motion.div>

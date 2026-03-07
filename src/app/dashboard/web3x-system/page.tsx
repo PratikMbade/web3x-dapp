@@ -11,7 +11,7 @@ import { getSession } from '@/lib/get-session';
 const mockNftData = {
   id: "1",
   userId: "user-123",
-  tokenType: 3,
+  tokenType: 0,
   tokenId: 1001,
   mintDate: new Date(),
   royaltNFTId: "royalty-123"

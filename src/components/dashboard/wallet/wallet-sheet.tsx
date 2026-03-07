@@ -16,8 +16,7 @@ import { Wallet, Copy, ArrowUpDown, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import { HorseTokenDetail } from "./horse-token-details";
 import { ethers } from "ethers";
-import { useActiveWallet, useDisconnect } from "thirdweb/react";
-import WalletDisconnect from "@/components/web3-wallet/wallet-disconnect";
+import WalletConnect from "@/components/web3-wallet/wallet-connect";
 
 
 interface TokenBalance {
@@ -234,16 +233,9 @@ export function WalletSheet({
                             <div className="flex items-center justify-between">
                                 <SheetTitle className="text-white text-lg">Wallet</SheetTitle>
                                 <div className="flex items-center gap-2 mt-5">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 hover:bg-zinc-800"
-                                        onClick={fetchBalances}
-                                        disabled={isLoadingBalances}
-                                    >
-                                        <RefreshCw className={`h-4 w-4 ${isLoadingBalances ? 'animate-spin' : ''}`} />
-                                    </Button>
-                                    <WalletDisconnect/>
+                                   
+                                        <WalletConnect/>
+
                                     <SheetClose asChild></SheetClose>
                                 </div>
                             </div>

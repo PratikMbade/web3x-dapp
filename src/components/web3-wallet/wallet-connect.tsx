@@ -104,6 +104,7 @@ const WalletConnect = () => {
 
       const timestamp = Date.now();
       const message = `Sign this message to authenticate with web3x.space\n\nWallet: ${address}\nTimestamp: ${timestamp}`;
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 2 second delay
 
       console.log('Step 1: Signing message...');
       const signature = await activeAccount.signMessage({ message });
@@ -186,7 +187,11 @@ const WalletConnect = () => {
       refetch();
 
       console.log('Disconnected successfully');
-      router.push('/');
+    const currentPath = window.location.pathname;
+if (!currentPath.includes('/registration') && !currentPath.includes('/login')) {
+  router.push('/');
+}
+
     } catch (error) {
       console.error('Disconnect error:', error);
     }

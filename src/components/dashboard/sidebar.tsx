@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import React, { useState } from "react"
 import Image from "next/image"
+import WalletConnect from "../web3-wallet/wallet-connect"
 
 interface SubMenuItem {
     href: string
@@ -49,25 +50,24 @@ interface NavItem {
 const navItems: NavItem[] = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
     { href: "/dashboard/web3x-system", label: "Web3xSystem", icon: Globe },
-    { href: "#", label: "Horse Token", icon: Coins },
+    { href: "#dashboard-horse-token", label: "Horse Token", icon: Coins },
     {
         href: "#dashboard-user",
         label: "User",
         icon: Users,
         subItems: [
             { href: "/dashboard/register-user", label: "Register User", icon: UserPlus },
-            { href: "/dashboard/packagebuy-user", label: "Package Buy", icon: ShoppingCart },
+            { href: "#", label: "Package Buy", icon: ShoppingCart },
         ]
     },
-    { href: "/dashboard/user-explorer", label: "User Explorer", icon: GalleryHorizontalEnd },
+    // { href: "/dashboard/user-explorer", label: "User Explorer", icon: GalleryHorizontalEnd },
     {
         href: "#",
         label: "Income",
         icon: DollarSign,
         subItems: [
-            { href: "/dashboard/income/level-income", label: "Level Income", icon: TrendingUp },
-            { href: "/dashboard/income/matrix-income", label: "Matrix Income", icon: Grid3x3 },
-            { href: "/dashboard/income/nft-income", label: "NFT Income", icon: ImageIcon },
+            { href: "/dashboard/matrix-income", label: "Matrix Income", icon: Grid3x3 },
+            { href: "/dashboard/nft-income", label: "NFT Income", icon: ImageIcon },
         ]
     },
 ]
@@ -220,29 +220,7 @@ export function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
 
                 {/* User Profile */}
                 <div className="border-t border-border p-4">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="w-full justify-start gap-3 px-3 py-6 hover:bg-sidebar-accent">
-                                <Avatar className="h-9 w-9">
-                                    <AvatarImage src={''} />
-                                    <AvatarFallback>{"PB"}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex flex-col items-start">
-                                </div>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuItem>
-                                <Settings className="mr-2 h-4 w-4" />
-                                Account Settings
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
-                                <LogOut className="mr-2 h-4 w-4" />
-                                Log out
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <WalletConnect />
                 </div>
             </aside>
         </>

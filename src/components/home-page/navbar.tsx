@@ -15,8 +15,6 @@ import Link from "next/link"
 
 const navItems = [
     { name: "Platform", href: "/#platform" },
-    { name: "Ecosystem", href: "/#roadmap" },
-    { name: "Community", href: "/#join" },
     { name: "Smart Contracts", href: "/#how-it-works" },
     { name: "Marketing", href: "/marketing" },
 ]
