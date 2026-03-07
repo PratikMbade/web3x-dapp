@@ -2,20 +2,11 @@
 
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
-import { Bell, Moon, Search, Sun, Monitor, Menu } from "lucide-react"
+import {  Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
 import React from "react"
+import { WalletSheet } from "./wallet/wallet-sheet"
+import { useActiveAccount } from "thirdweb/react"
 
 const breadcrumbLabels: Record<string, string> = {
     admin: "Dashboard",
@@ -38,6 +29,43 @@ export function Header({ onMenuClick }: AdminHeaderProps) {
     const { setTheme } = useTheme()
 
 
+    const walletData = {
+        walletAddress: "0x7433882803...F8ec",
+        totalBalance: "7.59",
+        innerBalances: [
+            {
+                symbol: "HRT",
+                name: "Horse Token",
+                balance: "0.00",
+                usdValue: "$0.00",
+                icon: "🔷",
+            },
+        ],
+        walletBalances: [
+            {
+                symbol: "BNB",
+                name: "Binance",
+                balance: "0.77",
+                usdValue: "$0.77",
+                icon: "🟡",
+            },
+            {
+                symbol: "WBNB",
+                name: "Wrapped Binance",
+                balance: "0.00",
+                usdValue: "$0.00",
+                icon: "🟡",
+            },
+        ],
+    };
+
+    const handleDisconnect = () => {
+        // Implement your disconnect logic here
+        console.log("Disconnecting wallet...");
+    };
+
+
+    const activeAccount = useActiveAccount()
 
 
     // Generate breadcrumbs from pathname
@@ -77,87 +105,63 @@ export function Header({ onMenuClick }: AdminHeaderProps) {
 
             {/* Right side actions */}
             <div className="flex items-center gap-1 sm:gap-3">
-                <div className="relative hidden md:block">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input placeholder="Search... (⌘K)" className="w-48 bg-secondary pl-9 lg:w-64" />
-                </div>
 
-                <Button variant="ghost" size="icon" className="md:hidden">
-                    <Search className="h-5 w-5" />
-                    <span className="sr-only">Search</span>
-                </Button>
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                            <span className="sr-only">Toggle theme</span>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setTheme("light")}>
-                            <Sun className="mr-2 h-4 w-4" />
-                            Light
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setTheme("dark")}>
-                            <Moon className="mr-2 h-4 w-4" />
-                            Dark
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setTheme("system")}>
-                            <Monitor className="mr-2 h-4 w-4" />
-                            System
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <WalletSheet
+    walletAddress={activeAccount?.address || ''}
+    totalBalance="1,234.56"
+    innerBalances={[
+        {
+            symbol: "HRS",
+            name: "Horse Token",
+            balance: "57.69",
+            usdValue: "$39.66",
+            icon: "🐴",
+            isHorseToken: true,
+        },
+    ]}
+    walletBalances={[
+        {
+            symbol: "ETH",
+            name: "Ethereum",
+            balance: "1.5",
+            usdValue: "$3,000.00",
+            icon: "⟠",
+        },
+    ]}
+    // onIcoVestingClaim={() => console.log("ICO Vesting claimed")}
+    onGiftVestingClaim={() => console.log("Gift Vesting claimed")}
+    icoVestingAvailable="125.50"
+    giftVestingAvailable="75.25"
+    icoClaimHistory={[
+        {
+            type: "ico",
+            amount: "226.66",
+            date: "2025-12-21",
+            txHash: "0xabcd1234...5678efgh",
+            usdValue: "$155.84",
+        },
+        {
+            type: "ico",
+            amount: "82.81",
+            date: "2025-05-11",
+            txHash: "0x9876fedc...4321abcd",
+            usdValue: "$56.93",
+        },
+    ]}
+    giftClaimHistory={[
+        {
+            type: "gift",
+            amount: "19.22",
+            date: "2025-09-17",
+            txHash: "0x1111aaaa...2222bbbb",
+            usdValue: "$13.21",
+        },
+    ]}
+/>
 
-                {/* Notifications */}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative">
-                            <Bell className="h-5 w-5" />
-                            <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs">3</Badge>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-72 sm:w-80">
-                        <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
-                            <span className="font-medium">New comment on Polymarket</span>
-                            <span className="text-xs text-muted-foreground">2 minutes ago</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
-                            <span className="font-medium">5-star rating received</span>
-                            <span className="text-xs text-muted-foreground">1 hour ago</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
-                            <span className="font-medium">Product published successfully</span>
-                            <span className="text-xs text-muted-foreground">3 hours ago</span>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
 
-                {/* User avatar */}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full">
-                            {/* <Avatar className="h-8 w-8">
-                                <AvatarImage src={session.data?.user.image || ''} />
-                                <AvatarFallback>{initials}</AvatarFallback>
-                            </Avatar> */}
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>Profile</DropdownMenuItem>
-                        <DropdownMenuItem>Settings</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
-                            Log out
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+
             </div>
         </header>
     )

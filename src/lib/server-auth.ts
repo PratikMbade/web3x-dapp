@@ -26,7 +26,7 @@ export async function getServerUser() {
     console.log('Privy User ID from cookie:', userId);
     const user = await prisma.user.findUnique({
       where: {
-        privyUserId: userId,
+        id: userId,
       },
       include: {
         accounts: true,
@@ -61,7 +61,7 @@ export async function requireAuth() {
 export async function requireRegisteredUser() {
   const user = await requireAuth();
   
-  if (!user.registered) {
+  if (!user.isRegistered) {
     throw new Error('User not registered');
   }
   

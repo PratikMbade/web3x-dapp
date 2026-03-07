@@ -28,7 +28,7 @@ const faqs = [
     {
         question: "What is the Royalty NFT program?",
         answer:
-            "The Royalty NFT program by MetaUnity allows users to earn passive rewards by holding special NFTs. These NFTs provide various benefits including bonus earnings, exclusive access to features, and participation in governance decisions.",
+            "The Royalty NFT program by Web3X allows users to earn passive rewards by holding special NFTs. These NFTs provide various benefits including bonus earnings, exclusive access to features, and participation in governance decisions.",
     },
     {
         question: "Can I use Web3X on mobile?",

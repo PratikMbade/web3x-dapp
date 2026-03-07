@@ -7,7 +7,10 @@ import { Menu, X, Sun, Moon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
-import WalletConnect from "../ui/wallet-connect"
+import WalletConnect from "../web3-wallet/wallet-connect"
+import Link from "next/link"
+
+
 
 
 const navItems = [
@@ -87,10 +90,18 @@ export function Navbar() {
                     
 
                         <>
-                        {/* <WalletConnect /> */}
-                        <Button variant="outline" className="font-medium bg-transparent">
-                            Register
-                        </Button>
+
+                        <Link href={`/registration`}>
+                                <Button  variant={"default"}  className="font-medium ">
+                                    Register
+                                </Button>
+                        </Link>
+
+                       <Link href={`/login`}>
+                                <Button variant="outline" className="font-medium ">
+                                    Log In
+                                </Button>
+                       </Link>
                         </>
 
                     </div>
@@ -138,13 +149,19 @@ export function Navbar() {
                                         {item.name}
                                     </motion.a>
                                 ))}
-                                <div className="pt-4 space-y-3">
-                                    <Button variant="outline" className="w-full font-medium bg-transparent">
-                                        Login
-                                    </Button>
-                                    <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium">
-                                        Register
-                                    </Button>
+                                <div className="pt-4 flex flex-col space-y-4">
+
+                                    <Link href={`/registration`}>
+                                        <Button variant={"default"} className="font-medium ">
+                                            Register
+                                        </Button>
+                                    </Link>
+
+                                    <Link href={`/login`}>
+                                        <Button variant="outline" className="font-medium ">
+                                            Log In
+                                        </Button>
+                                    </Link>
                                 </div>
                             </div>
                         </motion.div>

@@ -2,8 +2,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import PrivyProviderWrapper from "@/components/providers/privy-provider"
-
+import ClientProvider from "./provider"
 
 
 export const metadata: Metadata = {
@@ -46,9 +45,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <PrivyProviderWrapper>
+          <ClientProvider>
             {children}
-          </PrivyProviderWrapper>
+          </ClientProvider>
         </ThemeProvider>
       </body>
     </html>

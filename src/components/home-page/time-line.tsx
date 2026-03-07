@@ -25,11 +25,11 @@ export function HorseTimeline() {
             ),
         },
         {
-            title: "January 2026",
+            title: "Q1 2026",
             content: (
                 <div>
                     <div className="mb-6 inline-block rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-2 backdrop-blur-sm border border-blue-500/20">
-                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Jan 1, 2026</p>
+                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Q1 2026</p>
                     </div>
                     <div className="ml-4 space-y-3 mb-8">
                         <div className="flex items-start gap-3 rounded-lg bg-neutral-50/50 p-4 transition-all hover:bg-neutral-100/50 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/50">
@@ -55,7 +55,7 @@ export function HorseTimeline() {
                     </div>
 
                     <div className="mb-6 inline-block rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-2 backdrop-blur-sm border border-blue-500/20">
-                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Jan 5, 2026</p>
+                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Q1 2026</p>
                     </div>
                     <div className="ml-4 space-y-3 mb-8">
                         <div className="flex items-start gap-3 rounded-lg bg-neutral-50/50 p-4 transition-all hover:bg-neutral-100/50 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/50">
@@ -71,7 +71,7 @@ export function HorseTimeline() {
                     </div>
 
                     <div className="mb-6 inline-block rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-2 backdrop-blur-sm border border-blue-500/20">
-                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Jan 5, 2026</p>
+                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Q1 2026</p>
                     </div>
                     <div className="ml-4 space-y-3">
                         <div className="flex items-start gap-3 rounded-lg bg-neutral-50/50 p-4 transition-all hover:bg-neutral-100/50 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/50">
@@ -103,7 +103,7 @@ export function HorseTimeline() {
             content: (
                 <div>
                     <div className="mb-6 inline-block rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 px-4 py-2 backdrop-blur-sm border border-purple-500/20">
-                        <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Jan 15, 2026 · Expected</p>
+                        <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Q1 2026</p>
                     </div>
                     <div className="ml-4 space-y-3 mb-8">
                         <div className="flex items-start gap-3 rounded-lg bg-neutral-50/50 p-4 transition-all hover:bg-neutral-100/50 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/50">
@@ -129,7 +129,7 @@ export function HorseTimeline() {
                     </div>
 
                     <div className="mb-6 inline-block rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 px-4 py-2 backdrop-blur-sm border border-purple-500/20">
-                        <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Jan 25, 2026 · Expected</p>
+                        <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Q2 2026</p>
                     </div>
                     <div className="ml-4 space-y-3 mb-8">
                         <div className="flex items-start gap-3 rounded-lg bg-neutral-50/50 p-4 transition-all hover:bg-neutral-100/50 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/50">
@@ -145,7 +145,7 @@ export function HorseTimeline() {
                     </div>
 
                     <div className="mb-6 inline-block rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 px-4 py-2 backdrop-blur-sm border border-purple-500/20">
-                        <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Feb 10, 2026 · Expected</p>
+                        <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Q2 2026</p>
                     </div>
                     <div className="ml-4 space-y-3">
                         <div className="flex items-start gap-3 rounded-lg bg-neutral-50/50 p-4 transition-all hover:bg-neutral-100/50 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/50">

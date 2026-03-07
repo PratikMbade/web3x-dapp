@@ -177,7 +177,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, index }) => {
 
     return (
         <motion.a
-            href={pdfPath}
+            href={"#"}
             target="_blank"
             rel="noopener noreferrer"
             variants={cardVariants}

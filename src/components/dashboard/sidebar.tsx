@@ -4,9 +4,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
     LayoutDashboard,
-    Package,
-    MessageSquare,
-    Star,
     Users,
     Settings,
     LogOut,
@@ -15,7 +12,13 @@ import {
     GalleryHorizontalEnd,
     Coins,
     Globe,
-    Rocket,
+    ChevronDown,
+    ChevronRight,
+    UserPlus,
+    ShoppingCart,
+    DollarSign,
+    Grid3x3,
+    ImageIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -27,17 +30,46 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import React from "react"
+import React, { useState } from "react"
 import Image from "next/image"
 
-const navItems = [
+interface SubMenuItem {
+    href: string
+    label: string
+    icon: React.ElementType
+}
+
+interface NavItem {
+    href: string
+    label: string
+    icon: React.ElementType
+    subItems?: SubMenuItem[]
+}
+
+const navItems: NavItem[] = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
     { href: "/dashboard/web3x-system", label: "Web3xSystem", icon: Globe },
-    { href: "/dashboard/horse-token", label: "Horse Token", icon: Coins },
-    { href: "/dashboard/user", label: "User", icon: Users },
+    { href: "#", label: "Horse Token", icon: Coins },
+    {
+        href: "#dashboard-user",
+        label: "User",
+        icon: Users,
+        subItems: [
+            { href: "/dashboard/register-user", label: "Register User", icon: UserPlus },
+            { href: "/dashboard/packagebuy-user", label: "Package Buy", icon: ShoppingCart },
+        ]
+    },
     { href: "/dashboard/user-explorer", label: "User Explorer", icon: GalleryHorizontalEnd },
-    { href: "/dashboard/income", label: "Income", icon: Users },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    {
+        href: "#",
+        label: "Income",
+        icon: DollarSign,
+        subItems: [
+            { href: "/dashboard/income/level-income", label: "Level Income", icon: TrendingUp },
+            { href: "/dashboard/income/matrix-income", label: "Matrix Income", icon: Grid3x3 },
+            { href: "/dashboard/income/nft-income", label: "NFT Income", icon: ImageIcon },
+        ]
+    },
 ]
 
 interface AdminSidebarProps {
@@ -47,7 +79,7 @@ interface AdminSidebarProps {
 
 export function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
     const pathname = usePathname()
-
+    const [expandedItems, setExpandedItems] = useState<string[]>([])
 
     const handleNavClick = () => {
         if (onClose) {
@@ -55,8 +87,28 @@ export function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
         }
     }
 
+    const toggleExpanded = (href: string) => {
+        setExpandedItems(prev =>
+            prev.includes(href)
+                ? prev.filter(item => item !== href)
+                : [...prev, href]
+        )
+    }
+
     const handleLogout = async () => {
         window.location.href = '/admin-signin';
+    }
+
+    const isItemActive = (href: string) => {
+        return pathname === href || pathname.startsWith(href + '/')
+    }
+
+    const isParentActive = (item: NavItem) => {
+        if (pathname === item.href) return true
+        if (item.subItems) {
+            return item.subItems.some(subItem => pathname.startsWith(subItem.href))
+        }
+        return pathname.startsWith(item.href + '/')
     }
 
     return (
@@ -74,7 +126,7 @@ export function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
                 {/* Logo */}
                 <div className="flex h-16 items-center justify-between border-b border-border px-6">
                     <div className="flex items-center gap-3">
-                        <div className="flex  items-center justify-center ">
+                        <div className="flex items-center justify-center">
                             <Image
                                 src="/Web3x7.png"
                                 alt="Web3X Logo"
@@ -82,7 +134,6 @@ export function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
                                 height={100}
                             />
                         </div>
-                    
                     </div>
                     <Button variant="ghost" size="icon" className="lg:hidden" onClick={onClose}>
                         <X className="h-5 w-5" />
@@ -90,26 +141,79 @@ export function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 space-y-1 p-4">
+                <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
                     {navItems.map((item) => {
-                        const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
                         const Icon = item.icon
+                        const isActive = isParentActive(item)
+                        const isExpanded = expandedItems.includes(item.href)
+                        const hasSubItems = item.subItems && item.subItems.length > 0
 
                         return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={handleNavClick}
-                                className={cn(
-                                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                                    isActive
-                                        ? "bg-sidebar-accent text-sidebar-primary"
-                                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                            <div key={item.href}>
+                                {/* Main Nav Item */}
+                                {hasSubItems ? (
+                                    <button
+                                        onClick={() => toggleExpanded(item.href)}
+                                        className={cn(
+                                            "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                                            isActive
+                                                ? "bg-sidebar-accent text-sidebar-primary"
+                                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Icon className={cn("h-5 w-5", isActive && "text-sidebar-primary")} />
+                                            {item.label}
+                                        </div>
+                                        {isExpanded ? (
+                                            <ChevronDown className="h-4 w-4" />
+                                        ) : (
+                                            <ChevronRight className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                ) : (
+                                    <Link
+                                        href={item.href}
+                                        onClick={handleNavClick}
+                                        className={cn(
+                                            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                                            isActive
+                                                ? "bg-sidebar-accent text-sidebar-primary"
+                                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                                        )}
+                                    >
+                                        <Icon className={cn("h-5 w-5", isActive && "text-sidebar-primary")} />
+                                        {item.label}
+                                    </Link>
                                 )}
-                            >
-                                <Icon className={cn("h-5 w-5", isActive && "text-sidebar-primary")} />
-                                {item.label}
-                            </Link>
+
+                                {/* Sub Items */}
+                                {hasSubItems && isExpanded && (
+                                    <div className="ml-4 mt-1 space-y-1 border-l border-border pl-4">
+                                        {item.subItems!.map((subItem) => {
+                                            const SubIcon = subItem.icon
+                                            const isSubActive = pathname === subItem.href
+
+                                            return (
+                                                <Link
+                                                    key={subItem.href}
+                                                    href={subItem.href}
+                                                    onClick={handleNavClick}
+                                                    className={cn(
+                                                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                                        isSubActive
+                                                            ? "bg-sidebar-accent text-sidebar-primary"
+                                                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                                                    )}
+                                                >
+                                                    <SubIcon className={cn("h-4 w-4", isSubActive && "text-sidebar-primary")} />
+                                                    {subItem.label}
+                                                </Link>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         )
                     })}
                 </nav>
@@ -119,7 +223,6 @@ export function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="w-full justify-start gap-3 px-3 py-6 hover:bg-sidebar-accent">
-
                                 <Avatar className="h-9 w-9">
                                     <AvatarImage src={''} />
                                     <AvatarFallback>{"PB"}</AvatarFallback>

@@ -14,7 +14,7 @@ const features = [
     {
         icon: Shield,
         title: "Secure Smart Contracts",
-        description: "Audited smart contracts ensuring the highest level of security for your assets",
+        description: "Smart contracts ensuring the highest level of security for your assets",
     },
     {
         icon: BarChart3,
@@ -29,7 +29,7 @@ const features = [
     {
         icon: Crown,
         title: "Royalty NFT",
-        description: "Royalty NFT program by MetaUnity, rewarding with bonus",
+        description: "Royalty NFT program by Web3x, rewarding with bonus",
     },
     {
         icon: Fingerprint,
