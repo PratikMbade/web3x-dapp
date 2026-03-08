@@ -389,3 +389,26 @@ export async function getTeamIncomeAggregation(
     return { levelIncomeAggregate: 0, matrixIncomeAggregate: 0 };
   }
 }
+
+export async function getUserTeamStats(wallet_address: string) {
+  try {
+
+    const userStats = await prisma.user.findUnique({
+      where: { wallet_address:wallet_address.toLowerCase() },
+      select: {
+        directTeam: true,
+        totalTema: true,
+      },
+    });
+
+
+
+    if (!userStats) return null;
+
+    return userStats;
+
+  } catch (error) {
+    console.error('Error fetching user team stats:', error);
+    return null;
+  }
+}

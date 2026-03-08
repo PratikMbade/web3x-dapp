@@ -71,9 +71,8 @@ export default function MainStructure(props: Props) {
             >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 place-items-center">
                     {PLANS.map((plan, index) => {
-                        const userPackage = props.package?.find(
-                            (p) => p.packageNumber === plan.tier
-                        )
+                        const userPackage =   null
+                        console.log("userPackage",userPackage);
                         return (
                             <motion.div
                                 key={index}
@@ -109,9 +108,11 @@ export default function MainStructure(props: Props) {
                         Our team is here to help you select the perfect package for your investment goals
                     </p>
                     <div className="flex flex-wrap gap-4 justify-center">
-                        <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold hover:shadow-lg hover:shadow-orange-500/30 transition-all">
+                       <a target="_blank" href="">
+                         <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold hover:shadow-lg hover:shadow-orange-500/30 transition-all">
                             Contact Support
                         </button>
+                       </a>
                         <button className="px-6 py-3 rounded-xl bg-slate-800 text-white font-semibold border border-slate-700 hover:bg-slate-700 transition-all">
                             View Documentation
                         </button>
