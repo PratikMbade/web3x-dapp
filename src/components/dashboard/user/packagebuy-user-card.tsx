@@ -17,17 +17,9 @@ import { usdtToWbnb } from "@/lib/utils"
 import { getUserHighestPackage } from "@/actions/user"
 import { useActiveAccount } from "thirdweb/react"
 import { isPackageBuyStored } from "@/actions/metaunity-system"
+import { Package } from "@/generated/prisma"
 
-// Plan interface
-type Package = {
-    id: number
-    name: string
-    description: string
-    price: number
-    duration: number
-}
 
-type Plan = Package | null;
 
 
 const planNames: Record<number, string> = {
@@ -44,6 +36,8 @@ const planNames: Record<number, string> = {
     11: "Champion",
     12: "Shining Star",
 }
+
+
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const packageAmount: Record<number, string> = {
@@ -63,7 +57,7 @@ const packageAmount: Record<number, string> = {
 
 export default function PackageBuyUserCard() {
     const [walletAddress, setWalletAddress] = useState("")
-    const [currentPlan, setCurrentPlan] = useState<Plan | null>(null)
+    const [currentPlan, setCurrentPlan] = useState<Package | null>(null)
     const [nextPlan, setNextPlan] = useState("")
     const [isVerifying, setIsVerifying] = useState(false)
     const [isApproved, setIsApproved] = useState(false)
@@ -82,7 +76,7 @@ export default function PackageBuyUserCard() {
 
         setIsVerifying(true)
         const timeoutId = setTimeout(() => {
-            getUserHighestPackage(walletAddress).then((plan:any) => {
+            getUserHighestPackage(walletAddress.toLowerCase()).then((plan:any) => {
                 setCurrentPlan(plan)
                 if (plan?.packageNumber && plan.packageNumber < 12) {
                     setNextPlan((plan.packageNumber + 1).toString())
@@ -188,15 +182,17 @@ const pathToBuy = [USDT,WBNB]; // <-- strings, not bare hex literals
             let activate;
             if (nextPlan === "1") {
                 console.log('we are buy plan 1');
-                activate = await contractIns?.buy_user_firstpackage(
+                activate = await contractIns?.buyPackageUser(
                     walletAddress,
-                    pathToBuy
+                    pathToBuy,
+                    true
                 );
             }
             else {
-                activate = await contractIns?.buy_user(
+                activate = await contractIns?.buyPackageUser(
                     walletAddress,
-                    pathToBuy
+                    pathToBuy,
+                    true
                 );
             }
 
@@ -313,11 +309,10 @@ const pathToBuy = [USDT,WBNB]; // <-- strings, not bare hex literals
                                 <div className="space-y-2">
                                     <div className="flex flex-col items-start justify-between">
                                         <div className="flex items-center gap-2">
-                                            <p className="font-medium">{planNames[currentPlan.id]}</p>
-                                            <p className="font-medium">{currentPlan.price}</p>
+                                            <p className="font-medium">{currentPlan.packageNumber}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-600">Package Number {currentPlan.id}</span>
+                                            <span className="text-sm text-gray-600">Package Number {currentPlan.packageNumber}</span>
                                         </div>
                                     </div>
                                 </div>

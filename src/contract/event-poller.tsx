@@ -6,7 +6,7 @@
 import { ethers } from 'ethers'
 import metaunityContractABI from './contract-abi.json'
 import { metaunityAddress } from './contract'
-import { packageBuy, setLevelIncome, setMatrixIncome } from '@/actions/metaunity-system'
+import { packageBuy, setMatrixIncome } from '@/actions/metaunity-system'
 import { PackageBuyResponse } from '@/types'
 
 

@@ -7,17 +7,16 @@ export async function getUserHighestPackage(wallet_address: string) {
     const user = await prisma.user.findUnique({
       where: { wallet_address },
     });
-
     if (!user) return null;
 
-    const packages = await prisma.package.findMany({
+    const highestPackage = await prisma.package.findFirst({
       where: { userId: user.id },
       orderBy: { packageNumber: 'desc' },
     });
 
-    if (!packages || packages.length === 0) return null;
 
-    return packages[0];
+    console.log('highestPackage',highestPackage);
+    return highestPackage ;
   } catch (error) {
     console.error('Error fetching user highest package:', error);
     return null;
@@ -396,6 +395,7 @@ export async function getUserTeamStats(wallet_address: string) {
     const userStats = await prisma.user.findUnique({
       where: { wallet_address:wallet_address.toLowerCase() },
       select: {
+        packages:true,
         directTeam: true,
         totalTema: true,
       },

@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma'; // Adjust the import path as necessary
 import { getPackageAmountByPackageId, getPackageNumberByLevelAmount } from '@/helper';
+import { createMatrixTree } from '../matrix/matrix-tree';
 
 
 
@@ -96,7 +97,7 @@ export async function packageBuy(
     //check if user exists
     const userExists = await prisma.user.findUnique({
       where: {
-        wallet_address: user,
+        wallet_address: user.toLowerCase(),
       },
     });
 
@@ -144,81 +145,7 @@ export async function packageBuy(
 }
 
 
-export async function setLevelIncome(
-  toUserWalletAddress: string,
-  amount: string,
-  amountInEther: string,
-  level: number,
-  time: number,
-  tranxHash: string
-) {
-  try {
 
-
-    console.log('called setLevelIncome', toUserWalletAddress, amount, amountInEther, level, time, tranxHash);
-    const userExists = await prisma.package.findUnique({
-      where: {
-        packageBuyTranxHash: tranxHash,
-      },
-      select: {
-        user: true,
-      },
-    });
-
-    if (!userExists) {
-      return {
-        success: false,
-        message: 'Package with this transaction hash not found',
-      };
-    }
-
-    const packageNumber = getPackageNumberByLevelAmount(amount);
-
-    const createdAt = new Date(time * 1000);
-
-    const toUserExists = await prisma.user.findUnique({
-      where: {
-        wallet_address: toUserWalletAddress,
-      },
-    });
-
-    if (!toUserExists) {
-      return {
-        success: false,
-        message: 'To user not found',
-      };
-    }
-
-    const createLevelIncome = await prisma.levelIncome.create({
-      data: {
-        fromUserWalletAddress: userExists.user.wallet_address,
-        toUserWalletAddress: toUserWalletAddress,
-        userId: toUserExists.id,
-        amount: amountInEther,
-        level: level,
-        createdAt: createdAt,
-        packageNumber: packageNumber,
-      },
-    });
-
-    if (createLevelIncome) {
-      console.log(
-        '✅ Level income created successfully',
-        createLevelIncome.toUserWalletAddress
-      );
-      return {
-        success: true,
-        message: 'Level income created successfully',
-      };
-    }
-  } catch (error) {
-    console.log('error', error);
-    return {
-      success: false,
-      message: 'Something went wrong',
-    };
-  }
-}
 
 export async function setMatrixIncome(
   toUserWalletAddress: string,
@@ -249,7 +176,7 @@ export async function setMatrixIncome(
 
     const toUserExists = await prisma.user.findUnique({
       where: {
-        wallet_address: toUserWalletAddress,
+        wallet_address: toUserWalletAddress.toLowerCase(),
       },
     });
 
@@ -262,8 +189,8 @@ export async function setMatrixIncome(
 
     const createMatrixIncome = await prisma.matrixIncome.create({
       data: {
-        fromUserWalletAddress: fromUser.user.wallet_address,
-        toUserWalletAddress: toUserWalletAddress,
+        fromUserWalletAddress: fromUser.user.wallet_address.toLowerCase(),
+        toUserWalletAddress: toUserWalletAddress.toLowerCase(),
         userId: toUserExists.id,
         amount: amountInEther,
         chainid: chainId,
@@ -279,39 +206,34 @@ export async function setMatrixIncome(
       if(!isRecycle){
 
         //let's do api call for create matrix tree
-  const origin = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+
   const payload = {
-    wallet_address: fromUser.user.wallet_address,
+    wallet_address: fromUser.user.wallet_address.toLowerCase(),
     chainId: chainId,
     amount: parseFloat(amountInEther),
     packageNumber: packageNumber
   };
-  const res = await fetch(`${origin}/api/matrix-tree`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    // server actions run server-side: disable cache for immediate effects
-    cache: 'no-store'
-  });
-
-  const data = await res.json();
-  console.log('Matrix tree creation response:', data);
-
-  if(!data.success){
-    return {
-      success: false,
-      message: 'Matrix tree creation failed',
-    };
-
+  
+   const response = createMatrixTree(
+      {
+            chainId: payload.chainId,
+    amount: String(payload.amount),
+    wallet_address:payload.wallet_address.toLowerCase(),
+    packageNumber:payload.packageNumber,
       }
+    )
 
 
- 
-
-      return {
+    if((await response).success){
+   return {
         success: true,
         message: 'Matrix income created successfully',
       };
+    }
+
+ 
+
+   
     }
   }
   } catch (error) {

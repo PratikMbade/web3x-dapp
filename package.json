@@ -29,6 +29,7 @@
     "@solana/web3.js": "^1.98.4",
     "@tabler/icons-react": "^3.36.0",
     "@tanstack/react-query": "^5.90.12",
+    "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.4.7",
     "class-variance-authority": "^0.7.1",

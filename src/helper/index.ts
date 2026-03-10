@@ -30,6 +30,7 @@ export const baseAmounts50: Record<number, number> = {
 
 
 export const slotRanks: Record<number, string> = {
+  0:'No active package',
    1: 'Explorer',
    2: 'Builder',
    3: 'Strategist',

@@ -57,7 +57,7 @@ const navItems: NavItem[] = [
         icon: Users,
         subItems: [
             { href: "/dashboard/register-user", label: "Register User", icon: UserPlus },
-            { href: "#", label: "Package Buy", icon: ShoppingCart },
+            { href: "/dashboard/packagebuy-user", label: "Package Buy", icon: ShoppingCart },
         ]
     },
     // { href: "/dashboard/user-explorer", label: "User Explorer", icon: GalleryHorizontalEnd },

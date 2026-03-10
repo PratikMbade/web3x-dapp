@@ -1,12 +1,13 @@
 'use client';
 
 import Image from "next/image"
-import { Clock, Copy, Check, Users, Network, Coins, Package } from "lucide-react"
+import { Clock, Copy, Check, Users, Network, Coins, Package, FireExtinguisherIcon } from "lucide-react"
 import { useHorseTokenBalance } from "@/hooks/useHorseTokenBalance"
 import { useActiveAccount } from "thirdweb/react"
 import { useState, useEffect } from "react"
 import { getUserTeamStats } from "@/actions/user/index"
 import { toast } from "sonner";
+import { slotRanks } from "@/helper";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface TeamStats {
@@ -21,6 +22,7 @@ export function SectionCards() {
     const [copied, setCopied] = useState(false);
     const [teamStats, setTeamStats] = useState<TeamStats | null>(null);
     const [teamLoading, setTeamLoading] = useState(false);
+    const [userActivePackage,setUserActivePackage] = useState('');
 
     const referralLink = activeAccount?.address
         ? `https://web3x.space/registration?rr=${activeAccount.address}`
@@ -33,11 +35,14 @@ export function SectionCards() {
             return;
         }
 
+
         const fetchStats = async () => {
             setTeamLoading(true);
             try {
                 const stats = await getUserTeamStats(activeAccount.address);
                 setTeamStats(stats);
+                const activePackage = slotRanks[stats?.packages.length || 0]
+                setUserActivePackage(activePackage)
             } catch (err) {
                 console.error("Failed to load team stats:", err);
                 setTeamStats(null);
@@ -108,21 +113,19 @@ export function SectionCards() {
                             <Package size={16} color="rgba(160,120,255,0.9)" />
                         </div>
                         <div>
-                            <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-white/30">Active Plan</p>
-                            <p className="font-bold text-[15px] text-white/[0.82] m-0" style={{ fontFamily: 'Syne, sans-serif' }}>M&amp;N Package</p>
+                            <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-white/30">Active Package</p>
+                            <p className="font-bold text-[15px] text-white/[0.82] m-0" style={{ fontFamily: 'Syne, sans-serif' }}>{userActivePackage.toUpperCase()}</p>
                         </div>
                     </div>
                     <div className="font-mono text-[10px] tracking-[0.06em] bg-white/[0.04] text-white/30 rounded-full px-[10px] py-[3px] inline-flex items-center gap-1 whitespace-nowrap"
                         style={{ border: '1px dashed rgba(255,255,255,0.14)' }}>
-                        <Clock size={10} />
-                        Coming Soon
+                            Package Buy Live
                     </div>
                 </div>
 
                 {/* Empty state */}
                 <div className="relative z-10">
-                    <div className="font-mono text-[2.6rem] leading-none tracking-tight text-white/[0.13]">—</div>
-                    <p className="font-mono text-[11px] text-white/25 mt-1">No active package</p>
+                    <p className="font-mono text-[11px] text-white mt-1">{activeAccount?.address}</p>
                 </div>
 
                 {/* Team stats */}
