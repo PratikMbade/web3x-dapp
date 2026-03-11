@@ -52,7 +52,7 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
     const [refreshing, setRefreshing] = useState(false);
     const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
 
-    const CLAIM_INTERVAL = 300; // 5 minutes in seconds
+    const CLAIM_INTERVAL = 86400; // 5 minutes in seconds
 
     const formatDate = useCallback((dateStr: string) => {
         const date = new Date(dateStr);
@@ -83,7 +83,7 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
 
     const timeUntilNextIcoClaim = useMemo(() => {
         if (!icoVestingData) return "";
-        if (parseFloat(icoVestingData.remaining) <= 0) return "No tokens left";
+        if (parseFloat(icoVestingData.remaining) <= 0) return "Buy Tokens in ICO";
         
         const diff = nextIcoClaimTime - currentTime;
         if (diff <= 0) return "Available now";
@@ -193,7 +193,7 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
             if (!activeAccount) return;
 
             const icoContractInsta = await icoContractInstance(activeAccount);
-            const userIcoViewData = await icoContractInsta.userICOView(activeAccount.address);
+            const userIcoViewData = await icoContractInsta.userHRSIcoLiveView(activeAccount.address);
 
             const vestingData: ICOVestingData = {
                 lockedAmt: formatUnits(userIcoViewData[0], 18),
@@ -214,7 +214,7 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
             if (!activeAccount) return;
 
             const icoContractInsta = await icoContractInstance(activeAccount);
-            const data = await icoContractInsta.userGiftView(activeAccount.address);
+            const data = await icoContractInsta.userHRSGiftLiveView(activeAccount.address);
 
             const giftData: GiftVestingData = {
                 lockedAmt: formatUnits(data[0], 18),
@@ -290,7 +290,7 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
             toast.loading('Transaction pending...', { id: 'claim-ico' });
 
             const icoInsta = await icoContractInstance(activeAccount);
-            const tx = await icoInsta.claimIcoLock(activeAccount.address);
+            const tx = await icoInsta.claimHRSIcoLock(activeAccount.address);
             await tx.wait();
 
             toast.success('ICO vesting claimed successfully 🎉', { id: 'claim-ico' });
@@ -327,7 +327,7 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
             toast.loading('Unlocking gift vesting...', { id: 'unlock-gift' });
 
             const icoInsta = await icoContractInstance(activeAccount);
-            const tx = await icoInsta.getGiftsLock(activeAccount.address);
+            const tx = await icoInsta.matrixHRSGiftLock(activeAccount.address);
             await tx.wait();
 
             toast.success('Gift vesting unlocked successfully 🎉', { id: 'unlock-gift' });
@@ -386,7 +386,7 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
             toast.loading('Transaction pending...', { id: 'claim-gift' });
 
             const icoInsta = await icoContractInstance(activeAccount);
-            const tx = await icoInsta.claimGift(activeAccount.address);
+            const tx = await icoInsta.claimMatrixGift(activeAccount.address);
             await tx.wait();
 
             toast.success('Gift vesting claimed successfully 🎉', { id: 'claim-gift' });
@@ -573,7 +573,7 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
                             <div className="mb-3 p-2 bg-amber-900/10 rounded border border-amber-700/20">
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="text-zinc-400">Vesting Rate:</span>
-                                    <span className="text-amber-400 font-medium">Every 5 minutes</span>
+                                    <span className="text-amber-400 font-medium">Every 24 hours</span>
                                 </div>
                                 <div className="flex items-center justify-between text-xs mt-1">
                                     <span className="text-zinc-400">Next unlock:</span>
@@ -649,7 +649,7 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
                                     <div className="mb-3 p-2 bg-purple-900/10 rounded border border-purple-700/20">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="text-zinc-400">Vesting Rate:</span>
-                                            <span className="text-purple-400 font-medium">Every 5 minutes</span>
+                                            <span className="text-purple-400 font-medium">Every 24 hours</span>
                                         </div>
                                         <div className="flex items-center justify-between text-xs mt-1">
                                             <span className="text-zinc-400">Next unlock:</span>

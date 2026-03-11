@@ -52,11 +52,12 @@ async function getHorseTokenData() {
         const supplyInWei = await horseTokenContractInst.totalSupply()
         const totalSupply = Number(formatUnits(supplyInWei, 18))
 
-        const circulatingInWei = await horseTokenContractInst.totalHoldingToken();
+        const circulatingInWei = await horseTokenContractInst.totalCirculatingSupply();
         const circulating = Number(formatUnits(circulatingInWei, 18))
 
         // 2️⃣ holders count (already a normal number or bigint)
         const holderCount = await horseTokenContractInst.holderCount()
+        console.log('holderCount',holderCount);
 
         setData((prev) => ({
             ...prev,
@@ -85,12 +86,12 @@ async function getHorseTokenData() {
 
                     <ICOProgress data={data} />
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <SupplyDistribution data={data} />
                         <AirdropSection data={data} />
-                    </div>
+                    </div> */}
 
-                    <RecentEvents />
+                    {/* <RecentEvents /> */}
                 </div>
             </div>
         </main>

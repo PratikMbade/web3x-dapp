@@ -19,6 +19,7 @@ import {
     DollarSign,
     Grid3x3,
     ImageIcon,
+    User2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -50,7 +51,8 @@ interface NavItem {
 const navItems: NavItem[] = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
     { href: "/dashboard/web3x-system", label: "Web3xSystem", icon: Globe },
-    { href: "#dashboard-horse-token", label: "Horse Token", icon: Coins },
+    { href: "/dashboard/horse-token", label: "Horse Token", icon: Coins },
+    {href:"/dashboard/direct-team",label:"Direct Team",icon: User2},
     {
         href: "#dashboard-user",
         label: "User",

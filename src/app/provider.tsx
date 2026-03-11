@@ -9,6 +9,7 @@ import ZoomPreventer from '@/components/ui/zoom-preventer';
 import WalletConnectionProvider from '@/helper/custom-wallet-provider';
 import { Navbar } from '@/components/home-page/navbar';
 import { ScrollProgress } from '@/components/home-page/scroll-progress';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export default function ClientProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -27,14 +28,16 @@ export default function ClientProvider({ children }: { children: React.ReactNode
 
                     <WalletConnectionProvider>
                         {/* Single ThemeProvider here — keep it consistent */}
-                        <ThemeProvider
+                        <TooltipProvider>
+   <ThemeProvider
                             attribute="class"
                             defaultTheme="dark"
-                            enableSystem
                             disableTransitionOnChange
                         >
                             <ZoomPreventer>{children}</ZoomPreventer>
                         </ThemeProvider>
+                        </TooltipProvider>
+                     
                     </WalletConnectionProvider>
                 </ThirdwebProvider>
 
