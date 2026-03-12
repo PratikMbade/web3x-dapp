@@ -396,8 +396,25 @@ export default function ActionCards() {
                     background: linear-gradient(160deg, #0d0d18 0%, #0a0a13 100%) !important;
                     border: 1px solid rgba(255,255,255,0.08) !important;
                     border-radius: 24px !important;
+                    width: calc(100% - 32px) !important;
                     max-width: 460px !important;
+                    max-height: 85dvh !important;
+                    overflow-y: auto !important;
+                    overflow-x: hidden !important;
                     box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+                    scrollbar-width: thin !important;
+                    scrollbar-color: rgba(255,200,60,0.2) transparent !important;
+                }
+
+                .premium-dialog::-webkit-scrollbar { width: 4px; }
+                .premium-dialog::-webkit-scrollbar-track { background: transparent; }
+                .premium-dialog::-webkit-scrollbar-thumb {
+                    background: rgba(255,200,60,0.2);
+                    border-radius: 100px;
+                }
+
+                .dialog-scroll-body {
+                    padding: 4px 0;
                 }
 
                 .dialog-title-text {
