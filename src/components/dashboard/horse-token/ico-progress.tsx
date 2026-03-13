@@ -543,7 +543,11 @@ export default function ICOProgress({ data }: ICOProgressProps) {
                                     </div>
 
                                     <div className={`phase-price-label ${isActive ? 'active' : ''}`}>
-                                        ${(phase.price * 2).toFixed(4)}
+                                        {phase.phase === 1
+                                            ? '$0.20'
+                                            : phase.phase === 2
+                                                ? '$0.30'
+                                                : 'Coming Soon'}
                                     </div>
                                 </div>
                             );
@@ -560,7 +564,7 @@ export default function ICOProgress({ data }: ICOProgressProps) {
                         </div>
                         {isLoading
                             ? <div className="skel" style={{ width: 80, height: 24, marginTop: 4 }} />
-                            : <div className="bstat-value gold">${(icoPhases[currentPhase - 1]?.price * 2).toFixed(4)}</div>
+                            : <div className="bstat-value gold">${(icoPhases[currentPhase - 1]?.price * 2).toFixed(2)}</div>
                         }
                     </div>
 
@@ -572,8 +576,10 @@ export default function ICOProgress({ data }: ICOProgressProps) {
                         {isLoading
                             ? <div className="skel" style={{ width: 80, height: 24, marginTop: 4 }} />
                             : <div className="bstat-value">
-                                {currentPhase < 10 ? `$${(icoPhases[currentPhase]?.price * 2).toFixed(4)}` : '—'}
-                            </div>
+    {currentPhase < 10
+        ? (currentPhase + 1 === 1 ? '$0.20' : currentPhase + 1 === 2 ? '$0.30' : 'Coming Soon')
+        : '—'}
+  </div>
                         }
                     </div>
 
