@@ -6,6 +6,7 @@ import { HowItWorksSection } from "@/components/home-page/how-it-works-section"
 import { FAQSection } from "@/components/home-page/faq-section"
 import { Footer } from "@/components/home-page/footer"
 import { HorseTimeline } from "@/components/home-page/time-line"
+import { SmartContractsSection } from "@/components/home-page/smart-contract"
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
       <FeaturesSection />
       {/* <JoinPlatformSection /> */}
       <HowItWorksSection />
+      <SmartContractsSection/>
       <HorseTimeline/>
       <FAQSection />
       <Footer />

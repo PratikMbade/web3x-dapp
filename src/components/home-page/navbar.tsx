@@ -14,8 +14,8 @@ import Link from "next/link"
 
 
 const navItems = [
-    { name: "Platform", href: "/#platform" },
-    { name: "Smart Contracts", href: "/#how-it-works" },
+    { name: "How it Works", href: "/#howitworks" },
+    { name: "Smart Contracts", href: "/#smartcontracts" },
     { name: "Marketing", href: "/marketing" },
 ]
 
@@ -73,17 +73,7 @@ export function Navbar() {
 
                     {/* Right Side Actions */}
                     <div className="hidden md:flex items-center space-x-4">
-                        {mounted && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                                className="rounded-full"
-                                aria-label="Toggle theme"
-                            >
-                                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                            </Button>
-                        )}
+                       
 
                     
 
