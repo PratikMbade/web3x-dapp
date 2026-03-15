@@ -97,23 +97,23 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
         return `${seconds}s`;
     }, [icoVestingData, currentTime, nextIcoClaimTime]);
 
-    const currentIcoAvailable = useMemo(() => {
-        if (!icoVestingData) return "0";
-        
-        const remainingNum = parseFloat(icoVestingData.remaining);
-        if (remainingNum <= 0 || !isIcoClaimAvailable) return "0";
-        
-        const timeSinceLastClaim = currentTime - icoVestingData.lastClaimTime;
-        const intervalsPassed = Math.floor(timeSinceLastClaim / CLAIM_INTERVAL);
-        if (intervalsPassed < 1) return "0";
-        
-        const totalVestingPeriods = 100;
-        const lockedAmount = parseFloat(icoVestingData.lockedAmt);
-        const tokensPerInterval = lockedAmount / totalVestingPeriods;
-        const calculated = Math.min(tokensPerInterval * intervalsPassed, remainingNum);
-        
-        return calculated.toFixed(2);
-    }, [icoVestingData, currentTime, isIcoClaimAvailable]);
+const currentIcoAvailable = useMemo(() => {
+    if (!icoVestingData) return "0";
+    
+    const remainingNum = parseFloat(icoVestingData.remaining);
+    if (remainingNum <= 0 || !isIcoClaimAvailable) return "0";
+    
+    const timeSinceLastClaim = currentTime - icoVestingData.lastClaimTime;
+    const intervalsPassed = Math.floor(timeSinceLastClaim / CLAIM_INTERVAL);
+    if (intervalsPassed < 1) return "0";
+    
+    const lockedAmount = parseFloat(icoVestingData.lockedAmt);
+    // Always 0.5% of lockedAmt — fixed daily amount, never accumulates
+    const dailyClaimable = lockedAmount * 0.005;
+    const calculated = Math.min(dailyClaimable, remainingNum);
+    
+    return calculated.toFixed(2);
+}, [icoVestingData, currentTime, isIcoClaimAvailable]);
 
     // ==================== GIFT VESTING LOGIC ====================
     
@@ -152,23 +152,24 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
         return `${seconds}s`;
     }, [giftVestingData, currentTime, nextGiftClaimTime, isGiftLocked]);
 
-    const currentGiftAvailable = useMemo(() => {
-        if (!giftVestingData || isGiftLocked) return "0";
-        
-        const remainingNum = parseFloat(giftVestingData.remaining);
-        if (remainingNum <= 0 || !isGiftClaimAvailable) return "0";
-        
-        const timeSinceLastClaim = currentTime - giftVestingData.lastClaimTime;
-        const intervalsPassed = Math.floor(timeSinceLastClaim / CLAIM_INTERVAL);
-        if (intervalsPassed < 1) return "0";
-        
-        const totalVestingPeriods = 100;
-        const lockedAmount = parseFloat(giftVestingData.lockedAmt);
-        const tokensPerInterval = lockedAmount / totalVestingPeriods;
-        const calculated = Math.min(tokensPerInterval * intervalsPassed, remainingNum);
-        
-        return calculated.toFixed(2);
-    }, [giftVestingData, currentTime, isGiftClaimAvailable, isGiftLocked]);
+
+const currentGiftAvailable = useMemo(() => {
+    if (!giftVestingData || isGiftLocked) return "0";
+    
+    const remainingNum = parseFloat(giftVestingData.remaining);
+    if (remainingNum <= 0 || !isGiftClaimAvailable) return "0";
+    
+    const timeSinceLastClaim = currentTime - giftVestingData.lastClaimTime;
+    const intervalsPassed = Math.floor(timeSinceLastClaim / CLAIM_INTERVAL);
+    if (intervalsPassed < 1) return "0";
+    
+    const lockedAmount = parseFloat(giftVestingData.lockedAmt);
+    // Always 0.5% of lockedAmt — fixed daily amount, never accumulates
+    const dailyClaimable = lockedAmount * 0.005;
+    const calculated = Math.min(dailyClaimable, remainingNum);
+    
+    return calculated.toFixed(2);
+}, [giftVestingData, currentTime, isGiftClaimAvailable, isGiftLocked]);
 
     // ==================== DATA FETCHING ====================
     
@@ -223,6 +224,7 @@ export function HorseTokenDetail({onBack}:HorseTokenDetailProps) {
                 lastClaimTime: data[3].toNumber(),
                 remaining: formatUnits(data[4], 18),
             };
+            console.log('Gift vesting data fetched:', giftData);
 
             setGiftVestingData(giftData);
         } catch (error) {
