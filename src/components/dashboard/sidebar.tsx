@@ -64,7 +64,7 @@ const navItems: NavItem[] = [
     },
     // { href: "/dashboard/user-explorer", label: "User Explorer", icon: GalleryHorizontalEnd },
     {
-        href: "#",
+        href: "#dashboard-user",
         label: "Income",
         icon: DollarSign,
         subItems: [

@@ -52,6 +52,7 @@ export async function getMatrixIncomeTableForAdmin(
   wallet_address: string
 ): Promise<MatrixIncomeTableType[] | []> {
   try {
+    console.log('matrix',wallet_address);
     const user = await prisma.user.findUnique({
       where: { wallet_address },
       include: {
