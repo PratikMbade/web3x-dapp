@@ -16,14 +16,7 @@ const iconMap: Record<string, any> = {
 
 export default function KPICards({ data }: KPICardsProps) {
   const kpis = [
-    {
-      label: "Market Cap",
-      value: `996,484 / 998,349`,
-      change: data.priceChange,
-      icon: "chart",
-      accent: "#f59e0b",
-      description: "Circulating × Price",
-    },
+   
     {
       label: "Total Supply",
       value: `${data.totalSupply.toFixed(2)}`,
@@ -32,6 +25,14 @@ export default function KPICards({ data }: KPICardsProps) {
       icon: "database",
       accent: "#6366f1",
       description: "Max issuance cap",
+    },
+     {
+      label: "Matrix Gift",
+value: `${data?.giftDone || 0}/${data?.remainingGift || 0}`,
+      change: data.priceChange,
+      icon: "chart",
+      accent: "#f59e0b",
+      description: "Gift Done × Remaining Gift",
     },
     {
       label: "Circulating",

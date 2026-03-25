@@ -12,6 +12,7 @@ import ActionCards from "@/components/dashboard/horse-token/action-cards"
 import { useActiveAccount } from "thirdweb/react"
 import { horseTokenContractInstance } from "@/contract/horse-token-contract/contract-instance"
 import { formatUnits } from "ethers/lib/utils"
+import { icoContractAddress, icoContractInstance } from "@/contract/ico-contract/ico-contract"
 
 export default function Page() {
     const [data, setData] = useState({
@@ -55,6 +56,19 @@ async function getHorseTokenData() {
         const circulatingInWei = await horseTokenContractInst.totalCirculatingSupply();
         const circulating = Number(formatUnits(circulatingInWei, 18))
 
+
+        // matrix gift
+        const icoTokenContractInst = await icoContractInstance(activeAccount);
+
+     // Call ONLY once
+const giftDetails = await icoTokenContractInst.HRSLiveMatrixGiftDetails(icoContractAddress);
+
+// Convert properly
+const giftDone = formatUnits(giftDetails.giftDone, 18);
+
+const remainingGift = formatUnits(giftDetails.remainingGift, 18);
+
+
         // 2️⃣ holders count (already a normal number or bigint)
         const holderCount = await horseTokenContractInst.holderCount()
         console.log('holderCount',holderCount);
@@ -63,6 +77,8 @@ async function getHorseTokenData() {
             ...prev,
             totalSupply,
             circulating,
+            giftDone,
+            remainingGift,
             holders: Number(holderCount),
         }))
     } catch (error) {

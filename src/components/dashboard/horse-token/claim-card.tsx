@@ -364,7 +364,7 @@ const currentGiftAvailable = useMemo(() => {
                         <h3 className="ad-title" style={{ marginBottom:6 }}>Claim Airdrop</h3>
                         <p className="ad-desc">
                             Receive{' '}
-                            <span style={{ fontFamily:'Space Mono', fontSize:13, color:'#a070ff', fontWeight:700 }}>1,000 HORSE</span>
+                            <span style={{ fontFamily:'Space Mono', fontSize:13, color:'#a070ff', fontWeight:700 }}>9,999.99 HORSE</span>
                             {' '}tokens reserved for early community supporters
                         </p>
 
