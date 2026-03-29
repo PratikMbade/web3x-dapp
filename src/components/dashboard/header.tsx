@@ -29,35 +29,7 @@ export function Header({ onMenuClick }: AdminHeaderProps) {
     const { setTheme } = useTheme()
 
 
-    const walletData = {
-        walletAddress: "0x7433882803...F8ec",
-        totalBalance: "7.59",
-        innerBalances: [
-            {
-                symbol: "HRT",
-                name: "Horse Token",
-                balance: "0.00",
-                usdValue: "$0.00",
-                icon: "🔷",
-            },
-        ],
-        walletBalances: [
-            {
-                symbol: "BNB",
-                name: "Binance",
-                balance: "0.77",
-                usdValue: "$0.77",
-                icon: "🟡",
-            },
-            {
-                symbol: "WBNB",
-                name: "Wrapped Binance",
-                balance: "0.00",
-                usdValue: "$0.00",
-                icon: "🟡",
-            },
-        ],
-    };
+  
 
     const handleDisconnect = () => {
         // Implement your disconnect logic here
@@ -109,16 +81,24 @@ export function Header({ onMenuClick }: AdminHeaderProps) {
 
                 <WalletSheet
     walletAddress={activeAccount?.address || ''}
-    totalBalance="1,234.56"
+    totalBalance=" Loading...."
     innerBalances={[
         {
             symbol: "HRS",
             name: "Horse Token",
-            balance: "57.69",
-            usdValue: "$39.66",
-            icon: "🐴",
+            balance: "0.00",
+            usdValue: "$0.00",
+            icon: "/horse-token-img.png",
             isHorseToken: true,
         },
+        {
+                        symbol: "ENR",
+            name: "Energy Token",
+            balance: "0.00",
+            usdValue: "$0.00",
+            icon: "/energy-token-logo.png",
+            isHorseToken: false,
+        }
     ]}
     walletBalances={[
         {

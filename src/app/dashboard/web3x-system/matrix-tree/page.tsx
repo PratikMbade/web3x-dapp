@@ -1,5 +1,6 @@
 
 import { EthereumTree } from "@/components/dashboard/web3x-system/matrix-tree/matrix-tree"
+import RadialMatrixTree from "@/components/dashboard/web3x-system/matrix-tree/radical-tree"
 import { getSession } from "@/lib/get-session"
 
 export default async function MatrixPage() {
@@ -25,9 +26,11 @@ export default async function MatrixPage() {
 
   }
 
+
   return (
-    <main className="min-h-screen">
-      <EthereumTree walletAddress={data?.user.wallet_address} />
+    <main className="min-h-screen ">
+      {/* <EthereumTree walletAddress={data?.user.wallet_address} /> */}
+       <RadialMatrixTree walletAddress={data?.user.wallet_address.toLowerCase()}/>
     </main>
   )
 }
