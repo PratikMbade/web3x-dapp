@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, RefObject } from "react";
 import {
     Sheet,
     SheetContent,
@@ -31,6 +31,7 @@ import {
 } from "@/contract/contract";
 import { energyTokenContractInstance } from "@/contract/energy-token-contract/energy-token-contract";
 import { useActiveAccount } from "thirdweb/react";
+import { horseTokenContractInstance } from "@/contract/horse-token-contract/contract-instance";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -131,7 +132,6 @@ const TOKEN_META: Record<string, { label: string; name: string; img: string; dec
     },
 };
 
-// Swap pair definition
 type SwapDirection = {
     from: keyof typeof TOKEN_META;
     to: keyof typeof TOKEN_META;
@@ -142,12 +142,14 @@ const ALL_PAIRS: SwapDirection[] = [
     { from: "BNB", to: "USDT" },
     { from: "WBNB", to: "BNB" },
     { from: "BNB", to: "WBNB" },
+    // ✅ NEW: WBNB ↔ USDT pairs
+    { from: "WBNB", to: "USDT" },
+    { from: "USDT", to: "WBNB" },
 ];
 
 type ActiveTab = "portfolio" | "swap";
-type SwapMode = "free" | "coming_soon"; // free = full token picker, coming_soon = HRS→USDT locked
+type SwapMode = "free" | "coming_soon";
 
-// Tab config for the two swap modes
 const SWAP_TABS: { id: SwapMode; label: string }[] = [
     { id: "free", label: "Swap" },
     { id: "coming_soon", label: "HRS → USDT" },
@@ -194,6 +196,76 @@ function TokenImg({ symbol, size = 28 }: { symbol: string; size?: number }) {
     );
 }
 
+// ─── Token Picker Dropdown (extracted for reuse) ──────────────────────────────
+
+function TokenPicker({
+    value,
+    disabledValue,
+    show,
+    onToggle,
+    onSelect,
+    pickerRef,
+    dropdownSide = "left",
+}: {
+    value: string;
+    disabledValue: string;
+    show: boolean;
+    onToggle: () => void;
+    onSelect: (sym: string) => void;
+pickerRef: RefObject<HTMLDivElement | null> | null;
+    dropdownSide?: "left" | "right";
+}) {
+    return (
+        <div className="relative shrink-0" ref={pickerRef}>
+            <button
+                onClick={onToggle}
+                className="flex items-center gap-1.5 bg-white/[0.06] hover:bg-white/[0.10] rounded-xl px-2.5 py-2 transition-colors border border-white/[0.04] hover:border-white/10 touch-manipulation"
+                style={{ minWidth: 90 }}
+            >
+                <TokenImg symbol={value} size={18} />
+                <span className="text-[13px] font-semibold">{value}</span>
+                <ChevronDown
+                    className="h-3 w-3 text-zinc-500 ml-auto transition-transform"
+                    style={{ transform: show ? "rotate(180deg)" : "rotate(0deg)" }}
+                />
+            </button>
+
+            {show && (
+                <div
+                    className={`absolute z-[100] top-full mt-1.5 w-[140px] rounded-xl border border-white/[0.08] bg-[#111] shadow-2xl overflow-hidden ${
+                        dropdownSide === "right" ? "right-0" : "left-0"
+                    }`}
+                >
+                    {(Object.keys(TOKEN_META) as string[]).map((sym) => {
+                        const isCurrent = sym === value;
+                        const isDisabled = sym === disabledValue;
+                        return (
+                            <button
+                                key={sym}
+                                disabled={isCurrent || isDisabled}
+                                onClick={() => onSelect(sym)}
+                                className={`w-full flex items-center gap-2.5 px-3 py-3 text-[12px] font-medium transition-colors text-left touch-manipulation ${
+                                    isCurrent
+                                        ? "bg-white/[0.07] text-white"
+                                        : isDisabled
+                                        ? "opacity-30 cursor-not-allowed"
+                                        : "text-zinc-400 hover:bg-white/[0.05] hover:text-white active:bg-white/[0.08]"
+                                }`}
+                            >
+                                <TokenImg symbol={sym} size={18} />
+                                <span>{sym}</span>
+                                {isCurrent && (
+                                    <CheckCircle2 className="h-3 w-3 text-white ml-auto" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function WalletSheet({
@@ -221,16 +293,36 @@ export function WalletSheet({
     const [isSwapping, setIsSwapping] = useState(false);
     const [swapSuccess, setSwapSuccess] = useState(false);
     const [swapError, setSwapError] = useState("");
-    const [swapStep, setSwapStep] = useState<string>(""); // step feedback during swap
+    const [swapStep, setSwapStep] = useState<string>("");
     const [tokenPrices, setTokenPrices] = useState({ BNB: 0, USDT: 1, WBNB: 0 });
     const [swapMode, setSwapMode] = useState<SwapMode>("free");
-    // Token picker dropdowns
     const [showFromPicker, setShowFromPicker] = useState(false);
     const [showToPicker, setShowToPicker] = useState(false);
 
-    // Live inner balances (fetched on-chain)
     const [liveInnerBalances, setLiveInnerBalances] = useState<TokenBalance[]>(innerBalances);
     const [isLoadingInner, setIsLoadingInner] = useState(false);
+
+    const fromPickerRef = useRef<HTMLDivElement>(null);
+    const toPickerRef = useRef<HTMLDivElement>(null);
+
+    // ── Close dropdowns on outside click ─────────────────────────────────────
+
+    useEffect(() => {
+        const handler = (e: MouseEvent | TouchEvent) => {
+            if (fromPickerRef.current && !fromPickerRef.current.contains(e.target as Node)) {
+                setShowFromPicker(false);
+            }
+            if (toPickerRef.current && !toPickerRef.current.contains(e.target as Node)) {
+                setShowToPicker(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        document.addEventListener("touchstart", handler);
+        return () => {
+            document.removeEventListener("mousedown", handler);
+            document.removeEventListener("touchstart", handler);
+        };
+    }, []);
 
     // ── Utilities ──────────────────────────────────────────────────────────────
 
@@ -255,23 +347,7 @@ export function WalletSheet({
         setSelectedHorseToken(null);
     };
 
-const fromPickerRef = useRef<HTMLDivElement>(null);
-const toPickerRef = useRef<HTMLDivElement>(null);
-
-useEffect(() => {
-    const handler = (e: MouseEvent) => {
-        if (fromPickerRef.current && !fromPickerRef.current.contains(e.target as Node)) {
-            setShowFromPicker(false);
-        }
-        if (toPickerRef.current && !toPickerRef.current.contains(e.target as Node)) {
-            setShowToPicker(false);
-        }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-}, []);
-
-    // ── Prices ──────────────────────────────────────────────────────────────────
+    // ── Prices ────────────────────────────────────────────────────────────────
 
     const fetchTokenPrices = async () => {
         try {
@@ -291,7 +367,7 @@ useEffect(() => {
         }
     };
 
-    // ── Balances ───────────────────────────────────────────────────────────────
+    // ── Balances ──────────────────────────────────────────────────────────────
 
     const fetchBalances = useCallback(async () => {
         if (!walletAddress || !ethers.utils.isAddress(walletAddress)) return;
@@ -333,7 +409,7 @@ useEffect(() => {
         }
     }, [walletAddress, rpcUrl]);
 
-    // ── Estimate ───────────────────────────────────────────────────────────────
+    // ── Estimate ──────────────────────────────────────────────────────────────
 
     useEffect(() => {
         const amount = parseFloat(swapAmount);
@@ -344,7 +420,7 @@ useEffect(() => {
         if (pTo > 0) setSwapEstimate(((amount * pFrom) / pTo).toFixed(6));
     }, [swapAmount, swapDir, tokenPrices]);
 
-    // ── Fetch live Energy token balance ────────────────────────────────────────
+    // ── Fetch live Energy token balance ───────────────────────────────────────
 
     const fetchInnerBalances = useCallback(async () => {
         if (!activeAccount) return;
@@ -352,29 +428,34 @@ useEffect(() => {
         try {
             const userAddress = activeAccount.address;
             const energyContract = await energyTokenContractInstance(activeAccount);
+            const horseContract = await horseTokenContractInstance(activeAccount)
 
-            // Build updated inner balances — start from the prop list
             const updated = await Promise.all(
                 innerBalances.map(async (token) => {
-                    // ENR = Energy token — fetch live balance
                     if (token.symbol === "ENR" && energyContract) {
                         try {
                             const raw = await energyContract.balanceOf(userAddress);
-                            // Try to get decimals; default to 18
                             let decimals = 18;
                             try { decimals = await energyContract.decimals(); } catch { /* use 18 */ }
                             const formatted = parseFloat(ethers.utils.formatUnits(raw, decimals));
-                            return {
-                                ...token,
-                                balance: formatted.toFixed(4),
-                                usdValue: token.usdValue, // keep existing USD value — no price feed for ENR
-                            };
+                            return { ...token, balance: formatted.toFixed(4), usdValue: token.usdValue };
                         } catch (e) {
                             console.error("Failed to fetch ENR balance:", e);
-                            return token; // fallback to prop value
+                            return token;
                         }
                     }
-                    // HRS and other tokens — keep as passed from parent
+                     if (token.symbol === "HRS" && energyContract) {
+                        try {
+                            const raw = await horseContract.balanceOf(userAddress);
+                            let decimals = 18;
+                            try { decimals = await horseContract.decimals(); } catch { /* use 18 */ }
+                            const formatted = parseFloat(ethers.utils.formatUnits(raw, decimals));
+                            return { ...token, balance: formatted.toFixed(4), usdValue: token.usdValue };
+                        } catch (e) {
+                            console.error("Failed to fetch ENR balance:", e);
+                            return token;
+                        }
+                    }
                     return token;
                 })
             );
@@ -382,15 +463,13 @@ useEffect(() => {
             setLiveInnerBalances(updated);
         } catch (e) {
             console.error("fetchInnerBalances error:", e);
-            setLiveInnerBalances(innerBalances); // fallback
+            setLiveInnerBalances(innerBalances);
         } finally {
             setIsLoadingInner(false);
         }
     }, [activeAccount, innerBalances]);
 
     useEffect(() => { if (walletAddress) fetchBalances(); }, [walletAddress, fetchBalances]);
-
-    // Fetch inner (ENR) balance whenever activeAccount changes
     useEffect(() => { fetchInnerBalances(); }, [activeAccount, fetchInnerBalances]);
 
     const displayWalletBalances = fetchedWalletBalances.length > 0 ? fetchedWalletBalances : walletBalances;
@@ -401,7 +480,7 @@ useEffect(() => {
         return t ? t.balance : "0.0000";
     };
 
-    // ── Flip direction ──────────────────────────────────────────────────────────
+    // ── Flip direction ────────────────────────────────────────────────────────
 
     const flipSwapDir = () => {
         setSwapDir((prev) => ({ from: prev.to, to: prev.from }));
@@ -411,18 +490,7 @@ useEffect(() => {
         setSwapStep("");
     };
 
-    // ── Pair selector labels ───────────────────────────────────────────────────
-
-    const pairGroups = [
-        { label: "USDT ↔ BNB", pairs: [ALL_PAIRS[0], ALL_PAIRS[1]] },
-        { label: "WBNB ↔ BNB", pairs: [ALL_PAIRS[2], ALL_PAIRS[3]] },
-    ];
-
-    const activePairGroup = pairGroups.find((g) =>
-        g.pairs.some((p) => p.from === swapDir.from && p.to === swapDir.to)
-    );
-
-    // ── handleSwap ─────────────────────────────────────────────────────────────
+    // ── handleSwap ────────────────────────────────────────────────────────────
 
     const handleSwap = async () => {
         const amount = parseFloat(swapAmount);
@@ -470,12 +538,9 @@ useEffect(() => {
                 const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
                 const bnbBal = await provider.getBalance(walletAddress);
                 const amountWei = ethers.utils.parseUnits(amount.toString(), 18);
-                // Reserve 0.001 BNB for gas
                 const gasReserve = ethers.utils.parseUnits("0.001", 18);
                 if (bnbBal.lt(amountWei.add(gasReserve)))
                     throw new Error(`Insufficient BNB. You have ${ethers.utils.formatEther(bnbBal)} BNB (reserve some for gas).`);
-
-                // Use wbnbContract signer for deposit (payable)
                 const wbnbContract = await wbnbContractInstance(activeAccount);
                 if (!wbnbContract) throw new Error("Failed to load WBNB contract.");
                 setSwapStep("Sending wrap transaction…");
@@ -486,7 +551,7 @@ useEffect(() => {
             }
 
             // ══════════════════════════════════════════════
-            //  USDT → BNB  (PancakeSwap)
+            //  USDT → BNB  (PancakeSwap: USDT → WBNB → unwrap)
             // ══════════════════════════════════════════════
             else if (from === "USDT" && to === "BNB") {
                 setSwapStep("Checking USDT balance…");
@@ -557,7 +622,93 @@ useEffect(() => {
                 if (receipt.status !== 1) throw new Error("Swap reverted on-chain.");
             }
 
-            // Success
+            // ══════════════════════════════════════════════
+            //  ✅ WBNB → USDT  (PancakeSwap: token → token)
+            // ══════════════════════════════════════════════
+            else if (from === "WBNB" && to === "USDT") {
+                setSwapStep("Checking WBNB balance…");
+                const wbnbContract = await wbnbContractInstance(activeAccount);
+                if (!wbnbContract) throw new Error("Failed to load WBNB contract.");
+                const amountIn = ethers.utils.parseUnits(amount.toString(), 18);
+                const wbnbBal = await wbnbContract.balanceOf(walletAddress);
+                if (wbnbBal.lt(amountIn))
+                    throw new Error(`Insufficient WBNB. You have ${ethers.utils.formatUnits(wbnbBal, 18)} WBNB.`);
+
+                setSwapStep("Checking allowance…");
+                const allowance = await wbnbContract.allowance(walletAddress, PANCAKE_ROUTER_V2);
+                if (allowance.lt(amountIn)) {
+                    setSwapStep("Approving WBNB spend…");
+                    const approveTx = await wbnbContract.approve(PANCAKE_ROUTER_V2, ethers.constants.MaxUint256);
+                    setSwapStep("Waiting for approval confirmation…");
+                    const approveReceipt = await approveTx.wait();
+                    if (approveReceipt.status !== 1) throw new Error("Approval transaction failed.");
+                }
+
+                setSwapStep("Getting swap quote…");
+                const router = await pancakeRouterContractInstance(activeAccount);
+                if (!router) throw new Error("Failed to load router contract.");
+                const path = [TOKEN_ADDRESSES.WBNB, TOKEN_ADDRESSES.USDT];
+                let amountsOut;
+                try { amountsOut = await router.getAmountsOut(amountIn, path); }
+                catch { throw new Error("Could not get swap quote. Liquidity may be insufficient."); }
+                const amountOutMin = amountsOut[1].mul(10000 - SLIPPAGE_BPS).div(10000);
+
+                setSwapStep("Executing swap…");
+                const swapTx = await router.swapExactTokensForTokens(
+                    amountIn, amountOutMin, path, walletAddress, deadline,
+                    { gasLimit: ethers.utils.hexlify(300000) }
+                );
+                setSwapStep("Waiting for confirmation…");
+                const receipt = await swapTx.wait();
+                if (receipt.status !== 1) throw new Error("Swap reverted on-chain.");
+            }
+
+            // ══════════════════════════════════════════════
+            //  ✅ USDT → WBNB  (PancakeSwap: token → token)
+            // ══════════════════════════════════════════════
+            else if (from === "USDT" && to === "WBNB") {
+                setSwapStep("Checking USDT balance…");
+                const usdtContract = await usdtContractInstance(activeAccount);
+                if (!usdtContract) throw new Error("Failed to load USDT contract.");
+                const amountIn = ethers.utils.parseUnits(amount.toString(), 18);
+                const usdtBal = await usdtContract.balanceOf(walletAddress);
+                if (usdtBal.lt(amountIn))
+                    throw new Error(`Insufficient USDT. You have ${ethers.utils.formatUnits(usdtBal, 18)} USDT.`);
+
+                setSwapStep("Checking allowance…");
+                const allowance = await usdtContract.allowance(walletAddress, PANCAKE_ROUTER_V2);
+                if (allowance.lt(amountIn)) {
+                    setSwapStep("Approving USDT spend…");
+                    const approveTx = await usdtContract.approve(PANCAKE_ROUTER_V2, ethers.constants.MaxUint256);
+                    setSwapStep("Waiting for approval confirmation…");
+                    const approveReceipt = await approveTx.wait();
+                    if (approveReceipt.status !== 1) throw new Error("Approval transaction failed.");
+                }
+
+                setSwapStep("Getting swap quote…");
+                const router = await pancakeRouterContractInstance(activeAccount);
+                if (!router) throw new Error("Failed to load router contract.");
+                const path = [TOKEN_ADDRESSES.USDT, TOKEN_ADDRESSES.WBNB];
+                let amountsOut;
+                try { amountsOut = await router.getAmountsOut(amountIn, path); }
+                catch { throw new Error("Could not get swap quote. Liquidity may be insufficient."); }
+                const amountOutMin = amountsOut[1].mul(10000 - SLIPPAGE_BPS).div(10000);
+
+                setSwapStep("Executing swap…");
+                const swapTx = await router.swapExactTokensForTokens(
+                    amountIn, amountOutMin, path, walletAddress, deadline,
+                    { gasLimit: ethers.utils.hexlify(300000) }
+                );
+                setSwapStep("Waiting for confirmation…");
+                const receipt = await swapTx.wait();
+                if (receipt.status !== 1) throw new Error("Swap reverted on-chain.");
+            }
+
+            else {
+                throw new Error(`Swap pair ${from} → ${to} is not supported.`);
+            }
+
+            // ── Success ───────────────────────────────────────────────────────
             setSwapSuccess(true);
             setSwapAmount("");
             setSwapEstimate("");
@@ -572,7 +723,7 @@ useEffect(() => {
         }
     };
 
-    // ── Render ─────────────────────────────────────────────────────────────────
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <Sheet>
@@ -593,9 +744,9 @@ useEffect(() => {
                 {!showHorseTokenDetail ? (
                     <div className="flex flex-col min-h-full">
 
-                        {/* ── Header ───────────────────────────────── */}
-                        <div className="px-5 pt-5 pb-4 border-b border-white/[0.06]">
-                            <div className="flex items-center justify-between mb-5">
+                        {/* ── Header ───────────────────────────────────────── */}
+                        <div className="px-4 pt-5 pb-4 border-b border-white/[0.06]">
+                            <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
                                     <Wallet className="h-3.5 w-3.5 text-zinc-500" />
                                     <span className="text-[11px] font-medium tracking-[0.12em] text-zinc-500 uppercase">
@@ -608,7 +759,7 @@ useEffect(() => {
                             {/* Address + copy */}
                             <button
                                 onClick={handleCopyAddress}
-                                className="group flex items-center gap-2 mb-5"
+                                className="group flex items-center gap-2 mb-4 touch-manipulation"
                             >
                                 <span className="font-mono text-[13px] text-zinc-400 group-hover:text-white transition-colors">
                                     {formatAddress(walletAddress)}
@@ -627,13 +778,13 @@ useEffect(() => {
                                     Total Value
                                 </p>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[2.6rem] font-extralight tracking-tight leading-none text-white">
+                                    <span className="text-[2.2rem] font-extralight tracking-tight leading-none text-white">
                                         ${displayTotalBalance}
                                     </span>
                                     <button
                                         onClick={() => { fetchBalances(); fetchInnerBalances(); }}
                                         disabled={isLoadingBalances}
-                                        className="mb-1 p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                                        className="mb-1 p-1.5 rounded-lg hover:bg-white/5 transition-colors touch-manipulation"
                                     >
                                         <RefreshCw className={`h-3.5 w-3.5 text-zinc-600 ${isLoadingBalances ? "animate-spin" : ""}`} />
                                     </button>
@@ -641,13 +792,13 @@ useEffect(() => {
                             </div>
                         </div>
 
-                        {/* ── Tabs ─────────────────────────────────── */}
-                        <div className="flex px-5 border-b border-white/[0.06]">
+                        {/* ── Tabs ─────────────────────────────────────────── */}
+                        <div className="flex px-4 border-b border-white/[0.06]">
                             {(["portfolio", "swap"] as ActiveTab[]).map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`py-3 mr-5 text-[11px] font-semibold tracking-[0.1em] uppercase transition-all border-b-[1.5px] -mb-px ${
+                                    className={`py-3 mr-5 text-[11px] font-semibold tracking-[0.1em] uppercase transition-all border-b-[1.5px] -mb-px touch-manipulation ${
                                         activeTab === tab
                                             ? "border-white text-white"
                                             : "border-transparent text-zinc-600 hover:text-zinc-400"
@@ -658,13 +809,12 @@ useEffect(() => {
                             ))}
                         </div>
 
-                        {/* ── Content ──────────────────────────────── */}
-                        <div className="flex-1 px-5 py-5 space-y-6">
+                        {/* ── Content ──────────────────────────────────────── */}
+                        <div className="flex-1 px-4 py-4 space-y-5">
 
-                            {/* PORTFOLIO */}
+                            {/* ─── PORTFOLIO TAB ────────────────────────────── */}
                             {activeTab === "portfolio" && (
                                 <>
-                                    {/* Inner balance */}
                                     {liveInnerBalances.length > 0 && (
                                         <section>
                                             <div className="flex items-center justify-between mb-2.5">
@@ -674,8 +824,7 @@ useEffect(() => {
                                                 <button
                                                     onClick={fetchInnerBalances}
                                                     disabled={isLoadingInner}
-                                                    className="p-1 rounded-lg hover:bg-white/5 transition-colors"
-                                                    title="Refresh inner balances"
+                                                    className="p-1 rounded-lg hover:bg-white/5 transition-colors touch-manipulation"
                                                 >
                                                     <RefreshCw className={`h-3 w-3 text-zinc-700 ${isLoadingInner ? "animate-spin" : ""}`} />
                                                 </button>
@@ -685,14 +834,14 @@ useEffect(() => {
                                                     <div
                                                         key={i}
                                                         onClick={() => handleTokenClick(token)}
-                                                        className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
+                                                        className={`flex items-center justify-between px-3 py-3 rounded-xl border transition-all ${
                                                             token.isHorseToken
-                                                                ? "border-amber-900/30 bg-amber-950/10 hover:bg-amber-950/20 cursor-pointer"
-                                                                : "border-white/[0.05] hover:border-white/10 cursor-default"
+                                                                ? "border-amber-900/30 bg-amber-950/10 hover:bg-amber-950/20 cursor-pointer active:bg-amber-950/30"
+                                                                : "border-white/5 hover:border-white/10 cursor-default"
                                                         }`}
                                                     >
                                                         <div className="flex items-center gap-3">
-                                                            <div className="h-9 w-9 rounded-full bg-zinc-900 flex items-center justify-center overflow-hidden">
+                                                            <div className="h-9 w-9 rounded-full bg-zinc-900 flex items-center justify-center overflow-hidden shrink-0">
                                                                 <Image
                                                                     src={token.icon}
                                                                     alt={token.symbol}
@@ -718,7 +867,6 @@ useEffect(() => {
                                                             ) : (
                                                                 <>
                                                                     <p className="text-sm font-medium tabular-nums">{token.balance}</p>
-                                                                    <p className="text-[11px] text-zinc-500">{token.usdValue}</p>
                                                                 </>
                                                             )}
                                                             {token.isHorseToken && (
@@ -731,7 +879,6 @@ useEffect(() => {
                                         </section>
                                     )}
 
-                                    {/* Wallet balance */}
                                     <section>
                                         <p className="text-[10px] tracking-[0.14em] text-zinc-600 uppercase mb-2.5">
                                             Wallet Balance
@@ -746,10 +893,10 @@ useEffect(() => {
                                                 {displayWalletBalances.map((token, i) => (
                                                     <div
                                                         key={i}
-                                                        className="flex items-center justify-between px-4 py-3 rounded-xl border border-white/[0.05] hover:border-white/10 hover:bg-white/[0.02] transition-all"
+                                                        className="flex items-center justify-between px-3 py-3 rounded-xl border border-white/[0.05] hover:border-white/10 hover:bg-white/[0.02] transition-all"
                                                     >
                                                         <div className="flex items-center gap-3">
-                                                            <div className="h-9 w-9 rounded-full bg-zinc-900 flex items-center justify-center overflow-hidden">
+                                                            <div className="h-9 w-9 rounded-full bg-zinc-900 flex items-center justify-center overflow-hidden shrink-0">
                                                                 <TokenImg symbol={token.symbol} size={28} />
                                                             </div>
                                                             <div>
@@ -769,11 +916,11 @@ useEffect(() => {
                                 </>
                             )}
 
-                            {/* SWAP TAB */}
+                            {/* ─── SWAP TAB ──────────────────────────────────── */}
                             {activeTab === "swap" && (
                                 <div className="space-y-3">
 
-                                    {/* ── Mode tabs: Swap | HRS → USDT ── */}
+                                    {/* Mode tabs */}
                                     <div className="flex gap-1.5 p-1 rounded-xl bg-white/[0.03] border border-white/[0.05]">
                                         {SWAP_TABS.map((tab) => (
                                             <button
@@ -787,7 +934,7 @@ useEffect(() => {
                                                     setShowFromPicker(false);
                                                     setShowToPicker(false);
                                                 }}
-                                                className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide transition-all ${
+                                                className={`flex-1 py-2 rounded-lg text-[11px] font-semibold tracking-wide transition-all touch-manipulation ${
                                                     swapMode === tab.id
                                                         ? "bg-white text-black"
                                                         : "text-zinc-600 hover:text-zinc-400"
@@ -798,68 +945,42 @@ useEffect(() => {
                                         ))}
                                     </div>
 
-                                    {/* ══ FREE SWAP MODE ══════════════════════════ */}
+                                    {/* ══ FREE SWAP MODE ══ */}
                                     {swapMode === "free" && (
                                         <>
                                             {/* FROM card */}
-                                            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 overflow-visible">
-                                                <div className="flex justify-between mb-3">
+                                            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3">
+                                                <div className="flex justify-between mb-2">
                                                     <span className="text-[11px] text-zinc-600">You pay</span>
                                                     <button
-                                                        className="text-[11px] text-zinc-600 hover:text-zinc-300 transition-colors tabular-nums"
+                                                        className="text-[11px] text-zinc-600 hover:text-zinc-300 transition-colors tabular-nums touch-manipulation"
                                                         onClick={() => setSwapAmount(getTokenBalance(swapDir.from))}
                                                     >
-                                                        Balance: <span className="text-zinc-400">{getTokenBalance(swapDir.from)}</span>
+                                                        Balance:{" "}
+                                                        <span className="text-zinc-400">{getTokenBalance(swapDir.from)}</span>
                                                     </button>
                                                 </div>
-                                                <div className="flex items-center gap-3 z-10">
-                                                    {/* Token picker — FROM */}
-                                                    <div className="relative z-10" ref={fromPickerRef}>
-                                                        <button
-                                                            onClick={() => {
-                                                                console.log('select from ');
-                                                                setShowFromPicker((v) => !v);
-                                                                setShowToPicker(false);
-                                                            }}
-                                                            className="flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.10] rounded-xl px-3 py-2 min-w-[100px] transition-colors border border-white/[0.04] hover:border-white/10"
-                                                        >
-                                                            <TokenImg symbol={swapDir.from} size={20} />
-                                                            <span className="text-[13px] font-semibold">{swapDir.from}</span>
-                                                            <ChevronDown className="h-3 w-3 text-zinc-500 ml-auto" />
-                                                        </button>
-                                                        {showFromPicker && (
-                                                            <div className="absolute z-50 top-full  left-0 mt-1.5 w-[150px] rounded-xl border border-white/[0.08] bg-[#111] shadow-2xl ">
-                                                                {(Object.keys(TOKEN_META) as string[]).map((sym) => (
-                                                                    <button
-                                                                        key={sym}
-                                                                        disabled={sym === swapDir.from}
-                                                                        onClick={() => {
-                                                                            console.log('current selected',swapDir.to);
-                                                                            setSwapDir((prev) => ({ ...prev, from: sym }));
-                                                                            setSwapAmount("");
-                                                                            setSwapEstimate("");
-                                                                            setSwapError("");
-                                                                            setShowFromPicker(false);
-                                                                        }}
-                                                                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-[12px] font-medium transition-colors text-left ${
-                                                                            sym === swapDir.from
-                                                                                ? "bg-white/[0.07] text-white"
-                                                                                : sym === swapDir.to
-                                                                                ? "opacity-30 cursor-not-allowed"
-                                                                                : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
-                                                                        }`}
-                                                                    >
-                                                                        <TokenImg symbol={sym} size={18} />
-                                                                        <span>{sym}</span>
-                                                                        {sym === swapDir.from && (
-                                                                            <CheckCircle2 className="h-3 w-3 text-white ml-auto" />
-                                                                        )}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
 
+                                                {/* Token selector + amount input row */}
+                                                <div className="flex items-center gap-2">
+                                                    <TokenPicker
+                                                        value={swapDir.from}
+                                                        disabledValue={swapDir.to}
+                                                        show={showFromPicker}
+                                                        onToggle={() => {
+                                                            setShowFromPicker((v) => !v);
+                                                            setShowToPicker(false);
+                                                        }}
+                                                        onSelect={(sym) => {
+                                                            setSwapDir((prev) => ({ ...prev, from: sym }));
+                                                            setSwapAmount("");
+                                                            setSwapEstimate("");
+                                                            setSwapError("");
+                                                            setShowFromPicker(false);
+                                                        }}
+                                                        pickerRef={fromPickerRef}
+                                                        dropdownSide="left"
+                                                    />
                                                     <input
                                                         type="number"
                                                         min="0"
@@ -870,10 +991,12 @@ useEffect(() => {
                                                             setSwapAmount(e.target.value);
                                                             setSwapError("");
                                                         }}
-                                                        className="flex-1 bg-transparent text-right text-2xl font-extralight text-white placeholder-zinc-700 outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                        className="flex-1 min-w-0 bg-transparent text-right text-xl font-extralight text-white placeholder-zinc-700 outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     />
                                                 </div>
-                                                <div className="flex justify-end gap-1.5 mt-3">
+
+                                                {/* % quick-fill buttons */}
+                                                <div className="flex justify-end gap-1.5 mt-2.5">
                                                     {[
                                                         { label: "25%", factor: 0.25 },
                                                         { label: "50%", factor: 0.5 },
@@ -887,7 +1010,7 @@ useEffect(() => {
                                                                 const val = Math.max(0, bal * factor - (factor === 1 ? reserve : 0));
                                                                 setSwapAmount(val.toFixed(6));
                                                             }}
-                                                            className="text-[10px] px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.05] text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.07] transition-all font-medium"
+                                                            className="text-[10px] px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.05] text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.07] transition-all font-medium touch-manipulation"
                                                         >
                                                             {label}
                                                         </button>
@@ -896,95 +1019,69 @@ useEffect(() => {
                                             </div>
 
                                             {/* Flip button */}
-                                            <div className="flex justify-center relative z-10">
+                                            <div className="flex justify-center">
                                                 <button
                                                     onClick={flipSwapDir}
-                                                    className="group h-9 w-9 rounded-full border border-white/[0.08] bg-[#080808] hover:bg-white/[0.05] flex items-center justify-center transition-all hover:border-white/20 hover:scale-110 active:scale-95"
+                                                    className="group h-9 w-9 rounded-full border border-white/[0.08] bg-[#080808] hover:bg-white/[0.05] flex items-center justify-center transition-all hover:border-white/20 hover:scale-110 active:scale-95 touch-manipulation"
                                                 >
                                                     <ArrowUpDown className="h-3.5 w-3.5 text-zinc-500 group-hover:text-white transition-colors" />
                                                 </button>
                                             </div>
 
                                             {/* TO card */}
-                                            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
-                                                <div className="flex justify-between mb-3">
+                                            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3">
+                                                <div className="flex justify-between mb-2">
                                                     <span className="text-[11px] text-zinc-600">You receive</span>
                                                     <span className="text-[11px] text-zinc-600 tabular-nums">
-                                                        Balance: <span className="text-zinc-400">{getTokenBalance(swapDir.to)}</span>
+                                                        Balance:{" "}
+                                                        <span className="text-zinc-400">{getTokenBalance(swapDir.to)}</span>
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center gap-3">
-                                                    {/* Token picker — TO */}
-                                                    <div className="relative" ref={toPickerRef}>
-                                                        <button
-                                                            onClick={() => {
-                                                                setShowToPicker((v) => !v);
-                                                                setShowFromPicker(false);
-                                                            }}
-                                                            className="flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.10] rounded-xl px-3 py-2 min-w-[100px] transition-colors border border-white/[0.04] hover:border-white/10"
-                                                        >
-                                                            <TokenImg symbol={swapDir.to} size={20} />
-                                                            <span className="text-[13px] font-semibold">{swapDir.to}</span>
-                                                            <ChevronDown className="h-3 w-3 text-zinc-500 ml-auto" />
-                                                        </button>
-                                                        {showToPicker && (
-                                                            <div className="absolute top-full left-0 mt-1.5 z-50 w-[150px] rounded-xl border border-white/[0.08] bg-[#111] shadow-2xl overflow-hidden">
-                                                                {(Object.keys(TOKEN_META) as string[]).map((sym) => (
-                                                                    <button
-                                                                        key={sym}
-                                                                        disabled={sym === swapDir.from}
-                                                                        onClick={() => {
-                                                                            setSwapDir((prev) => ({ ...prev, to: sym }));
-                                                                            setSwapAmount("");
-                                                                            setSwapEstimate("");
-                                                                            setSwapError("");
-                                                                            setShowToPicker(false);
-                                                                        }}
-                                                                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-[12px] font-medium transition-colors text-left ${
-                                                                            sym === swapDir.to
-                                                                                ? "bg-white/[0.07] text-white"
-                                                                                : sym === swapDir.from
-                                                                                ? "opacity-30 cursor-not-allowed"
-                                                                                : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
-                                                                        }`}
-                                                                    >
-                                                                        <TokenImg symbol={sym} size={18} />
-                                                                        <span>{sym}</span>
-                                                                        {sym === swapDir.to && (
-                                                                            <CheckCircle2 className="h-3 w-3 text-white ml-auto" />
-                                                                        )}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="flex-1 text-right text-2xl font-extralight text-zinc-500 tabular-nums">
+                                                <div className="flex items-center gap-2">
+                                                    <TokenPicker
+                                                        value={swapDir.to}
+                                                        disabledValue={swapDir.from}
+                                                        show={showToPicker}
+                                                        onToggle={() => {
+                                                            setShowToPicker((v) => !v);
+                                                            setShowFromPicker(false);
+                                                        }}
+                                                        onSelect={(sym) => {
+                                                            setSwapDir((prev) => ({ ...prev, to: sym }));
+                                                            setSwapAmount("");
+                                                            setSwapEstimate("");
+                                                            setSwapError("");
+                                                            setShowToPicker(false);
+                                                        }}
+                                                        pickerRef={toPickerRef}
+                                                        dropdownSide="right"
+                                                    />
+                                                    <div className="flex-1 min-w-0 text-right text-xl font-extralight text-zinc-500 tabular-nums truncate">
                                                         {swapEstimate || "0.00"}
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {/* Rate line */}
-                                            {swapEstimate && swapAmount && (
-                                                <div className="flex justify-between items-center px-1">
-                                                    <span className="text-[11px] text-zinc-700">Rate</span>
-                                                    <span className="text-[11px] text-zinc-500 tabular-nums">
-                                                        1 {swapDir.from} ≈{" "}
-                                                        {(() => {
-                                                            const pFrom = tokenPrices[swapDir.from as keyof typeof tokenPrices] || 1;
-                                                            const pTo = tokenPrices[swapDir.to as keyof typeof tokenPrices] || 1;
-                                                            return (pFrom / pTo).toFixed(6);
-                                                        })()}{" "}
-                                                        {swapDir.to}
-                                                    </span>
+                                            {/* Rate + slippage row */}
+                                            <div className="flex flex-col gap-1.5 px-1">
+                                                {swapEstimate && swapAmount && (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-[11px] text-zinc-700">Rate</span>
+                                                        <span className="text-[11px] text-zinc-500 tabular-nums">
+                                                            1 {swapDir.from} ≈{" "}
+                                                            {(() => {
+                                                                const pFrom = tokenPrices[swapDir.from as keyof typeof tokenPrices] || 1;
+                                                                const pTo = tokenPrices[swapDir.to as keyof typeof tokenPrices] || 1;
+                                                                return (pFrom / pTo).toFixed(6);
+                                                            })()}{" "}
+                                                            {swapDir.to}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-[11px] text-zinc-700">Slippage</span>
+                                                    <span className="text-[11px] text-zinc-600">1.0%</span>
                                                 </div>
-                                            )}
-
-                                            {/* Slippage */}
-                                            <div className="flex justify-between items-center px-1">
-                                                <span className="text-[11px] text-zinc-700">Slippage</span>
-                                                <span className="text-[11px] text-zinc-600">1.0%</span>
                                             </div>
 
                                             {/* Step feedback */}
@@ -1000,7 +1097,7 @@ useEffect(() => {
                                                 <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-red-950/20 border border-red-900/30">
                                                     <AlertCircle className="h-3.5 w-3.5 text-red-400 mt-0.5 shrink-0" />
                                                     <span className="text-[12px] text-red-300 leading-relaxed">{swapError}</span>
-                                                </div>
+                                                </div> 
                                             )}
 
                                             {/* Success */}
@@ -1017,7 +1114,7 @@ useEffect(() => {
                                             <button
                                                 onClick={handleSwap}
                                                 disabled={isSwapping || !swapAmount || parseFloat(swapAmount) <= 0}
-                                                className="w-full py-3.5 rounded-2xl bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 active:scale-[0.98] transition-all disabled:opacity-25 disabled:cursor-not-allowed mt-1"
+                                                className="w-full py-4 rounded-2xl bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 active:scale-[0.98] transition-all disabled:opacity-25 disabled:cursor-not-allowed touch-manipulation"
                                             >
                                                 {isSwapping ? (
                                                     <span className="flex items-center justify-center gap-2">
@@ -1035,27 +1132,21 @@ useEffect(() => {
                                         </>
                                     )}
 
-                                    {/* ══ COMING SOON MODE ═══════════════════════ */}
+                                    {/* ══ COMING SOON MODE ══ */}
                                     {swapMode === "coming_soon" && (
                                         <div className="flex flex-col items-center justify-center py-10 px-4 gap-5">
-                                            {/* Pair preview */}
                                             <div className="flex items-center gap-3">
-                                                {/* HRS icon */}
                                                 <div className="flex flex-col items-center gap-1.5">
                                                     <div className="h-12 w-12 rounded-full bg-zinc-900 border border-amber-900/30 flex items-center justify-center overflow-hidden">
                                                         <Image src="/horse-token-img.png" alt="HRS" width={48} height={48} className="object-cover" />
                                                     </div>
                                                     <span className="text-[11px] font-semibold text-zinc-400">HRS</span>
                                                 </div>
-
-                                                {/* Arrow */}
                                                 <div className="flex flex-col items-center gap-1 mx-1">
                                                     <div className="h-px w-8 bg-zinc-800" />
                                                     <ArrowUpDown className="h-3.5 w-3.5 text-zinc-600" />
                                                     <div className="h-px w-8 bg-zinc-800" />
                                                 </div>
-
-                                                {/* USDT icon */}
                                                 <div className="flex flex-col items-center gap-1.5">
                                                     <div className="h-12 w-12 rounded-full bg-zinc-900 border border-white/[0.05] flex items-center justify-center overflow-hidden">
                                                         <img
@@ -1070,14 +1161,12 @@ useEffect(() => {
                                                 </div>
                                             </div>
 
-                                            {/* Badge */}
                                             <div className="px-4 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.03]">
                                                 <span className="text-[11px] font-semibold tracking-widest text-zinc-500 uppercase">
                                                     Coming Soon
                                                 </span>
                                             </div>
 
-                                            {/* Description */}
                                             <p className="text-center text-[12px] text-zinc-600 leading-relaxed max-w-[220px]">
                                                 Swapping HRS tokens to USDT will be available in an upcoming update.
                                             </p>
@@ -1091,7 +1180,7 @@ useEffect(() => {
                     <div>
                         <button
                             onClick={handleBackToWallet}
-                            className="flex items-center gap-2 text-xs text-zinc-500 hover:text-white transition-colors px-5 pt-5 pb-4"
+                            className="flex items-center gap-2 text-xs text-zinc-500 hover:text-white transition-colors px-4 pt-5 pb-4 touch-manipulation"
                         >
                             <ArrowLeft className="h-3.5 w-3.5" />
                             Back to wallet
