@@ -5,6 +5,7 @@ import { getUserById, getUserHighestPackage } from '@/actions/user';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { getSession } from '@/lib/get-session';
+import { getUserHighestNFT } from '@/actions/nft';
 
 
 
@@ -22,7 +23,7 @@ const mockNftData = {
 export default async function MetaUnitySystemPage() {
   const session = await getSession()
   const highestPackage = await getUserHighestPackage(session?.user.wallet_address || "")
-  const userHighestNFT = mockNftData
+  const userHighestNFT = await getUserHighestNFT(session?.user?.wallet_address || '')
 
 
   return (

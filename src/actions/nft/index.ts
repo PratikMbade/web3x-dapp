@@ -35,7 +35,7 @@ export const setJustTokenNFTs = async (
   try {
     const user = await prisma.user.findFirst({
       where: {
-        wallet_address,
+       wallet_address: wallet_address.toLowerCase(),
       },
       include: {
         currentNFTs: true,
@@ -96,7 +96,7 @@ export const setNFTsToDB = async (
   try {
     const user = await prisma.user.findFirst({
       where: {
-        wallet_address,
+        wallet_address:wallet_address.toLowerCase(),
       },
       include: {
         currentNFTs: true,
@@ -166,7 +166,7 @@ export const setMergeNFTs = async (
   try {
     const user = await prisma.user.findFirst({
       where: {
-        wallet_address,
+        wallet_address:wallet_address.toLowerCase(),
       },
       include: {
         currentNFTs: true,
@@ -301,7 +301,7 @@ export const getUserAllNFTs = async (
   try {
     const user = await prisma.user.findFirst({
       where: {
-        wallet_address: wallet_address,
+        wallet_address: wallet_address.toLowerCase(),
       },
       include: {
         currentNFTs: true,
@@ -336,7 +336,7 @@ export const storeUserNFTClaimedHistory = async (
   try {
     const user = await prisma.user.findFirst({
       where: {
-        wallet_address: wallet_address,
+        wallet_address: wallet_address.toLowerCase(),
       },
     });
 
@@ -375,7 +375,7 @@ export const getUserHighestNFT = async (
   try {
     const user = await prisma.user.findFirst({
       where: {
-        wallet_address: wallet_address,
+        wallet_address: wallet_address.toLowerCase(),
       },
       include: {
         currentNFTs: true,
@@ -409,7 +409,7 @@ export const getUserEachNFTCount = async (
   try {
     const user = await prisma.user.findFirst({
       where: {
-        wallet_address: wallet_address,
+        wallet_address: wallet_address.toLowerCase(),
       },
       include: {
         currentNFTs: true,
@@ -449,7 +449,7 @@ export const getUserNFTClaimedHistory = async (
   try {
     const user = await prisma.user.findFirst({
       where: {
-        wallet_address: wallet_address,
+        wallet_address: wallet_address.toLowerCase(),
       },
     });
 
@@ -484,7 +484,7 @@ export const transferNFT = async (wallet_address:string,receiver_address: string
 
     const user = await prisma.user.findFirst({
       where: {
-        wallet_address: wallet_address,
+        wallet_address: wallet_address.toLowerCase(),
       },
       include: {
         currentNFTs: true,
@@ -502,7 +502,7 @@ export const transferNFT = async (wallet_address:string,receiver_address: string
     //check receiver address
     const receiver = await prisma.user.findFirst({
       where: {
-        wallet_address: receiver_address,
+        wallet_address: receiver_address.toLowerCase(),
       },
     });
 
@@ -579,3 +579,46 @@ export const getEarthNFTsCount = async ():Promise<number> => {
     return 0;
   }
 }
+
+
+ 
+ 
+export interface NFTBonusHistory {
+  id: string;
+  userId: string;
+  tokenId: number;
+  tokenType: number;
+  bonusAmount: number;
+  claminedDate: Date;
+  bonusLaunchDate: Date;
+}
+ 
+export const getUserNFTBonusHistory = async (
+  wallet_address: string
+): Promise<NFTBonusHistory[] | null> => {
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        wallet_address: wallet_address,
+      },
+    });
+ 
+    if (!user) {
+      return null;
+    }
+ 
+    const nftBonusHistory = await prisma.nFTBonusHistory.findMany({
+      where: {
+        userId: user.id,
+      },
+      orderBy: {
+        claminedDate: "desc",
+      },
+    });
+ 
+    return nftBonusHistory ?? null;
+  } catch (error) {
+    console.log("something went wrong in getUserNFTBonusHistory", error);
+    return null;
+  }
+};

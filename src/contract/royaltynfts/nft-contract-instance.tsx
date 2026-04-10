@@ -13,7 +13,8 @@ import { Account } from 'thirdweb/wallets';
 export const nft_contract_abi = nft_abi;
 // export const nft_contract_address = '0x59dc9cA2F50C8b0D0557694ECeaEE838adbf7F41';
 // export const nft_contract_address = '0x3a2172004eDBEEe0B278d1EB5A6BADB1d070Fcba';
-export const nft_contract_address = '0xa95cd15C98b288d97978B9D1c011a006c4e2Ae21';
+// export const nft_contract_address = '0xa95cd15C98b288d97978B9D1c011a006c4e2Ae21';
+export const nft_contract_address = '0xC3fe3c443279F8ce4Fd0CFFc15E9F41A362A9f2c'
 
 
 export const getNftContractInstance = async (

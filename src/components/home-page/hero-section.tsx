@@ -5,6 +5,7 @@ import { Shield, Eye, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ParticlesBackground } from "@/components/home-page/particles-background"
 import { useState, useEffect } from "react"
+import Link from "next/link"
 
 const features = [
     { icon: Shield, text: "100% Decentralized" },
@@ -83,7 +84,7 @@ export function HeroSection() {
                         Based on <span className="text-primary font-semibold">BNB Smart Chain</span> Blockchain
                     </motion.p>
 
-         
+
 
                     {/* Key Features */}
                     <motion.div
@@ -123,18 +124,44 @@ export function HeroSection() {
                                 Join Telegram Group
                             </a>
                         </Button>
-                        <Button
-                            size="lg"
-                            variant="outline"
-                            className="text-lg px-8 py-6 rounded-full font-semibold border-2 hover:bg-primary/10 transition-all bg-transparent"
-                            asChild
-                        >
-                            <a href="https://whatsapp.com/channel/0029Vb77h3f2kNFl47oQFQ3U" target="_blank" rel="noopener noreferrer">
-                                Join WhatsApp Channel
-                            </a>
-                        </Button>
+
+
+
+
                     </motion.div>
+
+
+       <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 1 }}
+                        className="flex flex-col sm:flex-row justify-center gap-4 pt-8"
+                    >
+                       <Button>
+                        <Link href="/register">
+                        Register
+                        </Link>
+                    </Button>
+
+                    <Button variant="outline">
+                        <Link href="/login">
+                        Login
+                        </Link>
+                    </Button>
+
+
+
+
+
+                    </motion.div>
+
+                  
+
+
+
                 </motion.div>
+
+
 
                 {/* Scroll Indicator */}
                 <motion.div

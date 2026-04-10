@@ -81,7 +81,7 @@ export default function RegisterOtherUser() {
     }
   };
 
-  const registerInSmartContract = async (properSponsorAddress: string) => {
+const registerInSmartContract = async (properSponsorAddress: string) => {
     try {
       if (!activeAccount?.address) {
         toast('Connect your wallet', { icon: 'ℹ️' });
@@ -120,52 +120,28 @@ export default function RegisterOtherUser() {
         return false;
       }
 
-      // Get registration fee from contract
+      // Get registration fee from contract (in BNB/wei)
       const regFee = await contractInst.regFee();
-      console.log('regFee:', ethers.utils.formatUnits(regFee, 18));
+      console.log('regFee (BNB):', ethers.utils.formatUnits(regFee, 18));
 
-      // Create USDT contract instance
-      const usdtContract = new ethers.Contract(usdtAddress, usdtAbi, signer);
-      const decimals = await usdtContract.decimals();
+      // ✅ Check native BNB balance
+      const bnbBalance = await signer.provider.getBalance(activeAccount.address);
+      console.log('BNB balance:', ethers.utils.formatUnits(bnbBalance, 18));
 
-      // Check USDT balance of the caller (admin/operator paying the fee)
-      const usdtBalance = await usdtContract.balanceOf(activeAccount.address);
-      console.log('USDT balance:', ethers.utils.formatUnits(usdtBalance, decimals));
-
-      if (usdtBalance.lt(regFee)) {
-        const required = ethers.utils.formatUnits(regFee, decimals);
-        const current = ethers.utils.formatUnits(usdtBalance, decimals);
+      if (bnbBalance.lt(regFee)) {
+        const required = ethers.utils.formatUnits(regFee, 18);
+        const current = ethers.utils.formatUnits(bnbBalance, 18);
         toast.error(
-          `Insufficient USDT. You have ${parseFloat(current).toFixed(2)} USDT but need ${required} USDT.`
+          `Insufficient BNB. You have ${parseFloat(current).toFixed(4)} BNB but need ${parseFloat(required).toFixed(4)} BNB.`
         );
         return false;
-      }
-
-      // Check and approve USDT allowance
-      const contractAddress = contractInst.address;
-      const allowance = await usdtContract.allowance(activeAccount.address, contractAddress);
-
-      if (allowance.lt(regFee)) {
-        toast('Approving USDT... Please confirm in your wallet', { icon: 'ℹ️' });
-
-        const approveTx = await usdtContract.approve(contractAddress, regFee);
-        console.log('Approve tx sent:', approveTx.hash);
-
-        const approveReceipt = await approveTx.wait();
-        if (!approveReceipt || approveReceipt.status !== 1) {
-          toast.error('USDT approval failed. Please try again.');
-          return false;
-        }
-
-        console.log('USDT approved successfully');
-        toast.success('USDT approved! Now registering...');
       }
 
       // Estimate gas
       const gasEstimate = await contractInst.estimateGas.registerUserByToken(
         newUserAddress,
         properSponsorAddress,
-        { value: 0 }
+        { value: regFee } // ✅ Pass BNB as value
       );
 
       const gasLimit = gasEstimate.mul(110).div(100);
@@ -173,12 +149,12 @@ export default function RegisterOtherUser() {
 
       toast('Registering user... Please confirm in your wallet', { icon: 'ℹ️' });
 
-      // Send registration tx
+      // ✅ Send registration tx with BNB value
       const tx = await contractInst.registerUserByToken(
         newUserAddress,
         properSponsorAddress,
         {
-          value: 0,
+          value: regFee, // ✅ Send BNB instead of USDT
           gasLimit,
           maxFeePerGas: feeData.maxFeePerGas!,
           maxPriorityFeePerGas: feeData.maxPriorityFeePerGas!,
