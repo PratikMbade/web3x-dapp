@@ -108,6 +108,29 @@ export function HeroSection() {
                         ))}
                     </motion.div>
 
+       <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 1 }}
+                        className="flex flex-row items-center justify-center sm:flex-row justify-center gap-4 pt-8"
+                    >
+                       <Button className="w-fit">
+                        <Link href="/registration" >
+                        Register
+                        </Link>
+                    </Button>
+
+                    <Button variant="outline" className="w-fit">
+                        <Link href="/login">
+                        Login
+                        </Link>
+                    </Button>
+
+
+
+
+
+                    </motion.div>
                     {/* CTA Buttons */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -131,29 +154,7 @@ export function HeroSection() {
                     </motion.div>
 
 
-       <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 1 }}
-                        className="flex flex-col sm:flex-row justify-center gap-4 pt-8"
-                    >
-                       <Button>
-                        <Link href="/register">
-                        Register
-                        </Link>
-                    </Button>
 
-                    <Button variant="outline">
-                        <Link href="/login">
-                        Login
-                        </Link>
-                    </Button>
-
-
-
-
-
-                    </motion.div>
 
                   
 
