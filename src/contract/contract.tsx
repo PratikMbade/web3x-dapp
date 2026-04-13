@@ -9,7 +9,8 @@ import { toast } from 'sonner';
 
 // 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c main wbnb
 
-// export const metaunityAddress = '0x54a5eBc49f77e312ebB1a92B2068590d136acfb2';
+// export const metaunityAddress = '0x6eb46374b8EF7B538D17866AA7E82fcCbDa75945';
+
 export const metaunityAddress = '0x6eb46374b8EF7B538D17866AA7E82fcCbDa75945';
 export const wbnbAddress = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 

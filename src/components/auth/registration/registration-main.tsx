@@ -39,6 +39,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RegisterUserByAddType, saveUserInDB } from '@/actions/user';
 import Link from 'next/link';
 import { ParticlesBackground } from '@/components/home-page/particles-background';
+import { isPackageBuyStored } from '@/actions/metaunity-system';
+import { extractEventsFromReceipt, waitForPackageBuyEvent } from '@/contract/event-poller';
 
 // ─── Feature Card ──────────────────────────────────────────────────────────────
 const FeatureCard = ({ icon: Icon, title, description, delay }: any) => (
@@ -149,14 +151,14 @@ export default function RegistrationMain() {
     } catch (error) { setIsPending(false); } finally { setIsPending(false); }
   };
 
-  const registerInSmartContract = async (properAddress: string) => {
+const registerInSmartContract = async (properAddress: string) => {
     try {
       if (!activeAccount?.address) { toast('Connect your wallet', { icon: 'ℹ️' }); return false; }
       setIsFormSubmitted(true);
       const contractInst = await contractInstance(activeAccount);
       const isRegistered = await contractInst.register(activeAccount.address);
       if (isRegistered) { toast.error('User Already Registered!'); return false; }
-      if (properAddress.toLowerCase() !== '0x07a132a5F132619A9EA0A97e650F30d760C96b53'.toLowerCase()) {
+      if (properAddress.toLowerCase() !== '0x07a132a5f132619a9ea0a97e650f30d760c96b53'.toLowerCase()) {
         const isReferralExist = await contractInst.register(properAddress);
         if (!isReferralExist) { toast.error('Referral Not Registered!'); return false; }
       }
@@ -178,13 +180,45 @@ export default function RegistrationMain() {
         return false;
       }
 
-      // ✅ Estimate gas with BNB value
+      // ✅ STEP 1: Approve WBNB (equivalent of 6 USDT worth in WBNB) for the registration contract
+      const WBNB_ADDRESS = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'; // BSC Mainnet WBNB
+      const REGISTRATION_CONTRACT_ADDRESS = await contractInst.address; // spender = registration contract
+
+      const WBNB_ABI = [
+        'function approve(address spender, uint256 amount) external returns (bool)',
+        'function allowance(address owner, address spender) external view returns (uint256)',
+      ];
+
+      const wbnbContract = new ethers.Contract(WBNB_ADDRESS, WBNB_ABI, signer);
+
+      // Fetch current allowance
+      const currentAllowance = await wbnbContract.allowance(activeAccount.address, REGISTRATION_CONTRACT_ADDRESS);
+      console.log('Current WBNB allowance:', ethers.utils.formatUnits(currentAllowance, 18));
+
+      // Only approve if allowance is less than regFee
+      if (currentAllowance.lt(regFee)) {
+        toast('Approving WBNB... Please confirm in your wallet', { icon: 'ℹ️' });
+        const approveTx = await wbnbContract.approve(REGISTRATION_CONTRACT_ADDRESS, regFee);
+        toast('Waiting for approval confirmation...', { icon: '⏳' });
+        const approveReceipt = await approveTx.wait();
+
+        if (!approveReceipt || approveReceipt.status !== 1) {
+          toast.error('WBNB approval failed. Please try again.');
+          setIsFormSubmitted(false);
+          return false;
+        }
+        toast.success('✅ WBNB approved successfully');
+      } else {
+        console.log('Sufficient WBNB allowance already exists, skipping approval');
+      }
+
+      // ✅ STEP 2: Estimate gas with BNB value
       const gasEstimate = await contractInst.estimateGas.registerUserByToken(activeAccount.address, properAddress, { value: regFee });
       const gasLimit = gasEstimate.mul(110).div(100);
       const feeData = await signer.provider.getFeeData();
       toast('Registering... Please confirm in your wallet', { icon: 'ℹ️' });
 
-      // ✅ Send registration tx with BNB as value
+      // ✅ STEP 3: Send registration tx with BNB as value
       const tx = await contractInst.registerUserByToken(activeAccount.address, properAddress, {
         value: regFee,
         gasLimit,
@@ -205,10 +239,47 @@ export default function RegistrationMain() {
           teamCount: res._teamcount.toString(),
         };
         await registerUser(formattedResponse);
+
+        const isTranxDone = await isPackageBuyStored(receipt.transactionHash, activeAccount.address.toLowerCase());
+
+        if (!isTranxDone) {
+          const responses = await waitForPackageBuyEvent(receipt.transactionHash, activeAccount.address.toLowerCase());
+          console.log('response in handleBuy', responses);
+
+          if (!responses.length) {
+            toast.error('Transaction failed, please try again');
+            setIsPending(false);
+            return;
+          }
+
+          const has200 = responses.some((r) => r.statusCode === 200);
+          const all201 = responses.every((r) => r.statusCode === 201);
+
+          if (has200) {
+            const res = await extractEventsFromReceipt(receipt.transactionHash, activeAccount.address.toLowerCase());
+            console.log('extract event', res);
+
+            if (!res) {
+              toast.error('Event parsing failed');
+              setIsPending(false);
+              return;
+            }
+
+            toast.success('✅ Transaction completed successfully');
+          } else if (all201) {
+            toast.success('✅ Transaction already processed');
+          } else {
+            toast.success('✅ Transaction completed successfully');
+            setIsPending(false);
+            router.refresh();
+            return;
+          }
+        }
       }
       return true;
     } catch (error) {
       console.error('registerInSmartContract error:', error);
+      setIsFormSubmitted(false);
       setIsPending(false);
       const lower = String((error as any)?.message || '').toLowerCase();
       if (lower.includes('insufficient funds')) {

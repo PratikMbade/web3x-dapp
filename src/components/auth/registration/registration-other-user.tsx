@@ -21,6 +21,8 @@ import { ethers } from 'ethers';
 import { RegisterTypes } from './registration-main';
 import { verifySponsor } from '@/actions/auth';
 import { RegisterUserByAddType, saveUserInDB } from '@/actions/user';
+import { isPackageBuyStored } from '@/actions/metaunity-system';
+import { extractEventsFromReceipt, waitForPackageBuyEvent } from '@/contract/event-poller';
 
 const usdtAddress = "0x55d398326f99059fF775485246999027B3197955";
 
@@ -120,28 +122,70 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
         return false;
       }
 
-      // Get registration fee from contract (in BNB/wei)
+      // ─── STEP 1: Get regFee (WBNB equivalent of 6 USDT) ───────────────────
       const regFee = await contractInst.regFee();
-      console.log('regFee (BNB):', ethers.utils.formatUnits(regFee, 18));
+      console.log('regFee (WBNB):', ethers.utils.formatUnits(regFee, 18));
 
-      // ✅ Check native BNB balance
+      // ─── STEP 2: Check native BNB balance (for gas) ────────────────────────
       const bnbBalance = await signer.provider.getBalance(activeAccount.address);
       console.log('BNB balance:', ethers.utils.formatUnits(bnbBalance, 18));
 
-      if (bnbBalance.lt(regFee)) {
-        const required = ethers.utils.formatUnits(regFee, 18);
-        const current = ethers.utils.formatUnits(bnbBalance, 18);
+      // Keep a small buffer for gas (0.005 BNB)
+      const gasBudget = ethers.utils.parseUnits('0.0005', 18);
+      if (bnbBalance.lt(gasBudget)) {
         toast.error(
-          `Insufficient BNB. You have ${parseFloat(current).toFixed(4)} BNB but need ${parseFloat(required).toFixed(4)} BNB.`
+          `Insufficient BNB for gas. You have ${parseFloat(ethers.utils.formatUnits(bnbBalance, 18)).toFixed(4)} BNB but need at least 0.005 BNB.`
         );
         return false;
       }
 
-      // Estimate gas
+      // ─── STEP 3: Check WBNB balance ────────────────────────────────────────
+      const WBNB_ADDRESS = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'; // BSC Mainnet WBNB
+      const WBNB_ABI = [
+        'function approve(address spender, uint256 amount) external returns (bool)',
+        'function allowance(address owner, address spender) external view returns (uint256)',
+        'function balanceOf(address account) external view returns (uint256)',
+      ];
+
+      const wbnbContract = new ethers.Contract(WBNB_ADDRESS, WBNB_ABI, signer);
+      const REGISTRATION_CONTRACT_ADDRESS = contractInst.address;
+
+      const wbnbBalance = await wbnbContract.balanceOf(activeAccount.address);
+      console.log('WBNB balance:', ethers.utils.formatUnits(wbnbBalance, 18));
+
+      if (wbnbBalance.lt(regFee)) {
+        toast.error(
+          `Insufficient WBNB. You have ${parseFloat(ethers.utils.formatUnits(wbnbBalance, 18)).toFixed(4)} WBNB but need ${parseFloat(ethers.utils.formatUnits(regFee, 18)).toFixed(4)} WBNB.`
+        );
+        return false;
+      }
+
+      // ─── STEP 4: Approve WBNB if allowance is insufficient ─────────────────
+      const currentAllowance = await wbnbContract.allowance(activeAccount.address, REGISTRATION_CONTRACT_ADDRESS);
+      console.log('Current WBNB allowance:', ethers.utils.formatUnits(currentAllowance, 18));
+
+      if (currentAllowance.lt(regFee)) {
+        toast('Approving WBNB... Please confirm in your wallet', { icon: 'ℹ️' });
+
+        const approveTx = await wbnbContract.approve(REGISTRATION_CONTRACT_ADDRESS, regFee);
+        toast('Waiting for approval confirmation...', { icon: '⏳' });
+
+        const approveReceipt = await approveTx.wait(1);
+        if (!approveReceipt || approveReceipt.status !== 1) {
+          toast.error('WBNB approval failed. Please try again.');
+          return false;
+        }
+
+        toast.success('✅ WBNB approved successfully');
+      } else {
+        console.log('Sufficient WBNB allowance already exists, skipping approval');
+      }
+
+      // ─── STEP 5: Estimate gas for registration ─────────────────────────────
       const gasEstimate = await contractInst.estimateGas.registerUserByToken(
         newUserAddress,
         properSponsorAddress,
-        { value: regFee } // ✅ Pass BNB as value
+        { value: regFee }
       );
 
       const gasLimit = gasEstimate.mul(110).div(100);
@@ -149,12 +193,12 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
 
       toast('Registering user... Please confirm in your wallet', { icon: 'ℹ️' });
 
-      // ✅ Send registration tx with BNB value
+      // ─── STEP 6: Send registration tx ──────────────────────────────────────
       const tx = await contractInst.registerUserByToken(
         newUserAddress,
         properSponsorAddress,
         {
-          value: regFee, // ✅ Send BNB instead of USDT
+          value: regFee,
           gasLimit,
           maxFeePerGas: feeData.maxFeePerGas!,
           maxPriorityFeePerGas: feeData.maxPriorityFeePerGas!,
@@ -180,6 +224,41 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
         };
 
         await registerUser(formattedResponse);
+
+           const isTranxDone = await isPackageBuyStored(receipt.transactionHash, formattedUser.toLowerCase());
+        
+                if (!isTranxDone) {
+                  const responses = await waitForPackageBuyEvent(receipt.transactionHash, formattedUser.toLowerCase());
+                  console.log('response in handleBuy', responses);
+        
+                  if (!responses.length) {
+                    toast.error('Transaction failed, please try again');
+                    setIsPending(false);
+                    return;
+                  }
+        
+                  const has200 = responses.some((r) => r.statusCode === 200);
+                  const all201 = responses.every((r) => r.statusCode === 201);
+        
+                  if (has200) {
+                    const res = await extractEventsFromReceipt(receipt.transactionHash, formattedUser.toLowerCase());
+                    console.log('extract event', res);
+        
+                    if (!res) {
+                      toast.error('Event parsing failed');
+                      setIsPending(false);
+                      return;
+                    }
+        
+                    toast.success('✅ Transaction completed successfully');
+                  } else if (all201) {
+                    toast.success('✅ Transaction already processed');
+                  } else {
+                    toast.success('✅ Transaction completed successfully');
+                    setIsPending(false);
+                    return;
+                  }
+                }
       }
 
       return true;
