@@ -122,52 +122,75 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
         return false;
       }
 
-      // ─── STEP 1: Get regFee (WBNB equivalent of 6 USDT) ───────────────────
+      // ─── STEP 1: Get regFee from contract (used for tx value) ─────────────
       const regFee = await contractInst.regFee();
-      console.log('regFee (WBNB):', ethers.utils.formatUnits(regFee, 18));
+      console.log('regFee (raw):', ethers.utils.formatUnits(regFee, 18));
 
       // ─── STEP 2: Check native BNB balance (for gas) ────────────────────────
       const bnbBalance = await signer.provider.getBalance(activeAccount.address);
       console.log('BNB balance:', ethers.utils.formatUnits(bnbBalance, 18));
 
-      // Keep a small buffer for gas (0.005 BNB)
-      const gasBudget = ethers.utils.parseUnits('0.0005', 18);
-      if (bnbBalance.lt(gasBudget)) {
-        toast.error(
-          `Insufficient BNB for gas. You have ${parseFloat(ethers.utils.formatUnits(bnbBalance, 18)).toFixed(4)} BNB but need at least 0.005 BNB.`
-        );
-        return false;
-      }
+      const gasBudget = ethers.utils.parseUnits('0.005', 18); // 0.005 BNB for gas
+      
 
-      // ─── STEP 3: Check WBNB balance ────────────────────────────────────────
-      const WBNB_ADDRESS = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'; // BSC Mainnet WBNB
+      // ─── STEP 3: Setup WBNB contract ───────────────────────────────────────
+      const WBNB_ADDRESS = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
+      const BUSD_ADDRESS = '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56'; // BUSD ≈ 1 USD on BSC
+      const PANCAKE_ROUTER = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
+
       const WBNB_ABI = [
         'function approve(address spender, uint256 amount) external returns (bool)',
         'function allowance(address owner, address spender) external view returns (uint256)',
         'function balanceOf(address account) external view returns (uint256)',
       ];
 
+      const ROUTER_ABI = [
+        'function getAmountsOut(uint256 amountIn, address[] calldata path) external view returns (uint256[] memory)',
+      ];
+
       const wbnbContract = new ethers.Contract(WBNB_ADDRESS, WBNB_ABI, signer);
+      const routerContract = new ethers.Contract(PANCAKE_ROUTER, ROUTER_ABI, signer);
       const REGISTRATION_CONTRACT_ADDRESS = contractInst.address;
 
+      // ─── STEP 3.5: Get real-time WBNB price for 6 USD ─────────────────────
+      // Query: how much WBNB do I need to equal 6 BUSD (≈ 6 USD)?
+      const sixBUSD = ethers.utils.parseUnits('6', 18);
+      let wbnbFor6USD: ethers.BigNumber;
+
+      try {
+        // getAmountsOut: input = 6 BUSD → output = WBNB amount
+        // We reverse: input = 6 BUSD, path BUSD→WBNB gives us how much WBNB = 6 USD
+        const amounts = await routerContract.getAmountsOut(sixBUSD, [BUSD_ADDRESS, WBNB_ADDRESS]);
+        wbnbFor6USD = amounts[1];
+        console.log('WBNB for 6 USD (live price):', ethers.utils.formatUnits(wbnbFor6USD, 18));
+      } catch (priceErr) {
+        console.error('Price fetch failed, falling back to regFee:', priceErr);
+        wbnbFor6USD = regFee; // fallback to contract's regFee
+      }
+
+      // Add 1% slippage buffer to approval amount
+      const approvalAmount = wbnbFor6USD.mul(101).div(100);
+      console.log('Approval amount (with 1% buffer):', ethers.utils.formatUnits(approvalAmount, 18));
+
+      // ─── STEP 4: Check WBNB balance ────────────────────────────────────────
       const wbnbBalance = await wbnbContract.balanceOf(activeAccount.address);
       console.log('WBNB balance:', ethers.utils.formatUnits(wbnbBalance, 18));
 
-      if (wbnbBalance.lt(regFee)) {
+      if (wbnbBalance.lt(approvalAmount)) {
         toast.error(
-          `Insufficient WBNB. You have ${parseFloat(ethers.utils.formatUnits(wbnbBalance, 18)).toFixed(4)} WBNB but need ${parseFloat(ethers.utils.formatUnits(regFee, 18)).toFixed(4)} WBNB.`
+          `Insufficient WBNB. You have ${parseFloat(ethers.utils.formatUnits(wbnbBalance, 18)).toFixed(6)} WBNB but need ${parseFloat(ethers.utils.formatUnits(approvalAmount, 18)).toFixed(6)} WBNB (~6 USD).`
         );
         return false;
       }
 
-      // ─── STEP 4: Approve WBNB if allowance is insufficient ─────────────────
+      // ─── STEP 5: Approve WBNB (6 USD worth + 1% slippage) ─────────────────
       const currentAllowance = await wbnbContract.allowance(activeAccount.address, REGISTRATION_CONTRACT_ADDRESS);
       console.log('Current WBNB allowance:', ethers.utils.formatUnits(currentAllowance, 18));
 
-      if (currentAllowance.lt(regFee)) {
-        toast('Approving WBNB... Please confirm in your wallet', { icon: 'ℹ️' });
+      if (currentAllowance.lt(approvalAmount)) {
+        toast(`Approving ~6 USD in WBNB... Please confirm in your wallet`, { icon: 'ℹ️' });
 
-        const approveTx = await wbnbContract.approve(REGISTRATION_CONTRACT_ADDRESS, regFee);
+        const approveTx = await wbnbContract.approve(REGISTRATION_CONTRACT_ADDRESS, approvalAmount);
         toast('Waiting for approval confirmation...', { icon: '⏳' });
 
         const approveReceipt = await approveTx.wait(1);
@@ -176,12 +199,12 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
           return false;
         }
 
-        toast.success('✅ WBNB approved successfully');
+        toast.success(`✅ WBNB approved (~${parseFloat(ethers.utils.formatUnits(approvalAmount, 18)).toFixed(6)} WBNB = ~6 USD)`);
       } else {
         console.log('Sufficient WBNB allowance already exists, skipping approval');
       }
 
-      // ─── STEP 5: Estimate gas for registration ─────────────────────────────
+      // ─── STEP 6: Estimate gas for registration ─────────────────────────────
       const gasEstimate = await contractInst.estimateGas.registerUserByToken(
         newUserAddress,
         properSponsorAddress,
@@ -193,7 +216,7 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
 
       toast('Registering user... Please confirm in your wallet', { icon: 'ℹ️' });
 
-      // ─── STEP 6: Send registration tx ──────────────────────────────────────
+      // ─── STEP 7: Send registration tx ──────────────────────────────────────
       const tx = await contractInst.registerUserByToken(
         newUserAddress,
         properSponsorAddress,
@@ -225,40 +248,40 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
 
         await registerUser(formattedResponse);
 
-           const isTranxDone = await isPackageBuyStored(receipt.transactionHash, formattedUser.toLowerCase());
-        
-                if (!isTranxDone) {
-                  const responses = await waitForPackageBuyEvent(receipt.transactionHash, formattedUser.toLowerCase());
-                  console.log('response in handleBuy', responses);
-        
-                  if (!responses.length) {
-                    toast.error('Transaction failed, please try again');
-                    setIsPending(false);
-                    return;
-                  }
-        
-                  const has200 = responses.some((r) => r.statusCode === 200);
-                  const all201 = responses.every((r) => r.statusCode === 201);
-        
-                  if (has200) {
-                    const res = await extractEventsFromReceipt(receipt.transactionHash, formattedUser.toLowerCase());
-                    console.log('extract event', res);
-        
-                    if (!res) {
-                      toast.error('Event parsing failed');
-                      setIsPending(false);
-                      return;
-                    }
-        
-                    toast.success('✅ Transaction completed successfully');
-                  } else if (all201) {
-                    toast.success('✅ Transaction already processed');
-                  } else {
-                    toast.success('✅ Transaction completed successfully');
-                    setIsPending(false);
-                    return;
-                  }
-                }
+        const isTranxDone = await isPackageBuyStored(receipt.transactionHash, formattedUser.toLowerCase());
+
+        if (!isTranxDone) {
+          const responses = await waitForPackageBuyEvent(receipt.transactionHash, formattedUser.toLowerCase());
+          console.log('response in handleBuy', responses);
+
+          if (!responses.length) {
+            toast.error('Transaction failed, please try again');
+            setIsPending(false);
+            return;
+          }
+
+          const has200 = responses.some((r) => r.statusCode === 200);
+          const all201 = responses.every((r) => r.statusCode === 201);
+
+          if (has200) {
+            const res = await extractEventsFromReceipt(receipt.transactionHash, formattedUser.toLowerCase());
+            console.log('extract event', res);
+
+            if (!res) {
+              toast.error('Event parsing failed');
+              setIsPending(false);
+              return;
+            }
+
+            toast.success('✅ Transaction completed successfully');
+          } else if (all201) {
+            toast.success('✅ Transaction already processed');
+          } else {
+            toast.success('✅ Transaction completed successfully');
+            setIsPending(false);
+            return;
+          }
+        }
       }
 
       return true;
