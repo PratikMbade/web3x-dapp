@@ -27,6 +27,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useActiveAccount, useConnect } from 'thirdweb/react';
 import { contractInstance } from '@/contract/contract';
+import { HorseTokenContractAddress } from '@/contract/horse-token-contract/contract-instance';
 import { ethers5Adapter } from 'thirdweb/adapters/ethers5';
 import { chainId, client, MainnetChain } from '@/lib/client';
 import WalletConnect from '../../web3-wallet/wallet-connect';
@@ -180,36 +181,35 @@ const registerInSmartContract = async (properAddress: string) => {
         return false;
       }
 
-      // ✅ STEP 1: Approve WBNB (equivalent of 6 USDT worth in WBNB) for the registration contract
-      const WBNB_ADDRESS = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'; // BSC Mainnet WBNB
-      const REGISTRATION_CONTRACT_ADDRESS = await contractInst.address; // spender = registration contract
+      // ✅ STEP 1: Approve Horse Token for the registration contract
+      const REGISTRATION_CONTRACT_ADDRESS = await contractInst.address;
 
-      const WBNB_ABI = [
+      const HORSE_TOKEN_ABI = [
         'function approve(address spender, uint256 amount) external returns (bool)',
         'function allowance(address owner, address spender) external view returns (uint256)',
       ];
 
-      const wbnbContract = new ethers.Contract(WBNB_ADDRESS, WBNB_ABI, signer);
+      const horseTokenContract = new ethers.Contract(HorseTokenContractAddress, HORSE_TOKEN_ABI, signer);
 
-      // Fetch current allowance
-      const currentAllowance = await wbnbContract.allowance(activeAccount.address, REGISTRATION_CONTRACT_ADDRESS);
-      console.log('Current WBNB allowance:', ethers.utils.formatUnits(currentAllowance, 18));
+      const currentAllowance = await horseTokenContract.allowance(activeAccount.address, REGISTRATION_CONTRACT_ADDRESS);
+      console.log('Current Horse Token allowance:', ethers.utils.formatUnits(currentAllowance, 18));
 
-      // Only approve if allowance is less than regFee
-      if (currentAllowance.lt(regFee)) {
-        toast('Approving WBNB... Please confirm in your wallet', { icon: 'ℹ️' });
-        const approveTx = await wbnbContract.approve(REGISTRATION_CONTRACT_ADDRESS, regFee);
+      const horseTokenApprovalAmount = ethers.utils.parseUnits('100', 18);
+
+      if (currentAllowance.lt(horseTokenApprovalAmount)) {
+        toast('Approving Horse Token... Please confirm in your wallet', { icon: 'ℹ️' });
+        const approveTx = await horseTokenContract.approve(REGISTRATION_CONTRACT_ADDRESS, horseTokenApprovalAmount);
         toast('Waiting for approval confirmation...', { icon: '⏳' });
         const approveReceipt = await approveTx.wait();
 
         if (!approveReceipt || approveReceipt.status !== 1) {
-          toast.error('WBNB approval failed. Please try again.');
+          toast.error('Horse Token approval failed. Please try again.');
           setIsFormSubmitted(false);
           return false;
         }
-        toast.success('✅ WBNB approved successfully');
+        toast.success('✅ Horse Token approved successfully');
       } else {
-        console.log('Sufficient WBNB allowance already exists, skipping approval');
+        console.log('Sufficient Horse Token allowance already exists, skipping approval');
       }
 
       // ✅ STEP 2: Estimate gas with BNB value
