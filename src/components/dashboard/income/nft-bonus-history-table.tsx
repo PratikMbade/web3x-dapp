@@ -24,8 +24,8 @@ import {
   Layers,
   Inbox,
 } from "lucide-react";
-import { NFTBonusHistory } from "@/actions/nft";
 import { format } from "date-fns";
+import { NFTClaimedHistory } from "@/generated/prisma";
 
 // ─── Token type label map ────────────────────────────────────────────────────
 const TOKEN_TYPE_LABELS: Record<number, { label: string; variant: "default" | "secondary" | "outline" }> = {
@@ -63,7 +63,7 @@ function StatCard({
 }
 
 // ─── Mobile card view ────────────────────────────────────────────────────────
-function MobileCard({ row }: { row: NFTBonusHistory }) {
+function MobileCard({ row }: { row: NFTClaimedHistory }) {
   const tokenInfo = getTokenTypeInfo(row.tokenType);
   return (
     <div className="rounded-xl border border-border/60 bg-card/60 p-4 space-y-3 backdrop-blur-sm">
@@ -80,9 +80,9 @@ function MobileCard({ row }: { row: NFTBonusHistory }) {
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div className="space-y-0.5">
           <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            Bonus Amount
+            Claimed Amount
           </p>
-          <p className="font-bold text-emerald-500">+{row.bonusAmount.toFixed(4)}</p>
+          <p className="font-bold text-emerald-500">+{row.claimedAmount}</p>
         </div>
         <div className="space-y-0.5">
           <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
@@ -92,18 +92,10 @@ function MobileCard({ row }: { row: NFTBonusHistory }) {
         </div>
         <div className="space-y-0.5">
           <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            Claimed
+            Claimed Date
           </p>
           <p className="text-xs text-muted-foreground">
-            {format(new Date(row.claminedDate), "MMM d, yyyy")}
-          </p>
-        </div>
-        <div className="space-y-0.5">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            Launch Date
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {format(new Date(row.bonusLaunchDate), "MMM d, yyyy")}
+            {format(new Date(row.claimedDate), "MMM d, yyyy")}
           </p>
         </div>
       </div>
@@ -113,7 +105,7 @@ function MobileCard({ row }: { row: NFTBonusHistory }) {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 interface NFTBonusHistoryTableProps {
-  data: NFTBonusHistory[];
+  data: NFTClaimedHistory[];
 }
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
@@ -124,7 +116,7 @@ export function NFTBonusHistoryTable({ data }: NFTBonusHistoryTableProps) {
   const [pageSize, setPageSize]   = useState(10);
 
   // ── Derived stats ──────────────────────────────────────────────────────────
-  const totalBonus  = data.reduce((s, r) => s + r.bonusAmount, 0);
+  const totalClaimed  = data.reduce((s, r) => s + parseFloat(r.claimedAmount), 0);
   const uniqueTokens = new Set(data.map((r) => r.tokenId)).size;
 
   // ── Filter ────────────────────────────────────────────────────────────────
@@ -135,10 +127,9 @@ export function NFTBonusHistoryTable({ data }: NFTBonusHistoryTableProps) {
       (r) =>
         String(r.tokenId).includes(q) ||
         String(r.tokenType).includes(q) ||
-        String(r.bonusAmount).includes(q) ||
+        r.claimedAmount.includes(q) ||
         getTokenTypeInfo(r.tokenType).label.toLowerCase().includes(q) ||
-        format(new Date(r.claminedDate), "MMM d, yyyy").toLowerCase().includes(q) ||
-        format(new Date(r.bonusLaunchDate), "MMM d, yyyy").toLowerCase().includes(q)
+        format(new Date(r.claimedDate), "MMM d, yyyy").toLowerCase().includes(q)
     );
   }, [data, search]);
 
@@ -155,8 +146,8 @@ export function NFTBonusHistoryTable({ data }: NFTBonusHistoryTableProps) {
     <div className="space-y-5">
       {/* ── Stats row ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatCard icon={TrendingUp} label="Total Bonus"    value={totalBonus.toFixed(4)} />
-        <StatCard icon={Layers}     label="Total Claims"   value={data.length} />
+        <StatCard icon={TrendingUp} label="Total Claimed"  value={totalClaimed.toFixed(4)} />
+        <StatCard icon={Layers}     label="Total Records"  value={data.length} />
         <StatCard icon={Hash}       label="Unique Tokens"  value={uniqueTokens} />
       </div>
 
@@ -216,17 +207,12 @@ export function NFTBonusHistoryTable({ data }: NFTBonusHistoryTableProps) {
                   </TableHead>
                   <TableHead className="font-semibold text-xs uppercase tracking-widest text-muted-foreground">
                     <div className="flex items-center gap-1.5">
-                      <TrendingUp className="h-3 w-3" /> Bonus Amount
+                      <TrendingUp className="h-3 w-3" /> Claimed Amount
                     </div>
                   </TableHead>
                   <TableHead className="font-semibold text-xs uppercase tracking-widest text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="h-3 w-3" /> Claimed Date
-                    </div>
-                  </TableHead>
-                  <TableHead className="font-semibold text-xs uppercase tracking-widest text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="h-3 w-3" /> Launch Date
                     </div>
                   </TableHead>
                 </TableRow>
@@ -255,14 +241,11 @@ export function NFTBonusHistoryTable({ data }: NFTBonusHistoryTableProps) {
                       </TableCell>
                       <TableCell>
                         <span className="font-bold text-emerald-500">
-                          +{row.bonusAmount.toFixed(4)}
+                          +{row.claimedAmount}
                         </span>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(row.claminedDate), "MMM d, yyyy · HH:mm")}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(row.bonusLaunchDate), "MMM d, yyyy · HH:mm")}
+                        {format(new Date(row.claimedDate), "MMM d, yyyy · HH:mm")}
                       </TableCell>
                     </TableRow>
                   );

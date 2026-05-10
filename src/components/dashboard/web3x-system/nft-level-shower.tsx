@@ -108,7 +108,7 @@ export default function NFTLevelShower({ nftData }: { nftData: UserNFTs | null }
                 </div>
               </motion.div>
 
-              <Link href="#">
+              <Link href="/dashboard/nft">
                 <Button className="group relative rounded-xl px-8 py-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 transition-all hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105">
                   <span className="flex items-center gap-2">
                     View Details

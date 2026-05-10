@@ -333,6 +333,8 @@ export const storeUserNFTClaimedHistory = async (
   tokenType: number,
   claimedAmount: string
 ) => {
+
+  console.log('called');
   try {
     const user = await prisma.user.findFirst({
       where: {
@@ -550,6 +552,56 @@ export const transferNFT = async (wallet_address:string,receiver_address: string
   }
 }
 
+export interface MonthlyNFTIncome {
+  month: string;
+  income: number;
+}
+
+export const getNFTMonthlyIncome = async (
+  wallet_address: string
+): Promise<MonthlyNFTIncome[]> => {
+  try {
+    const user = await prisma.user.findFirst({
+      where: { wallet_address: wallet_address.toLowerCase() },
+    });
+
+    if (!user) return [];
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+
+    const history = await prisma.nFTClaimedHistory.findMany({
+      where: {
+        userId: user.id,
+        claimedDate: { gte: sixMonthsAgo },
+      },
+    });
+
+    const monthMap: Record<string, number> = {};
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = d.toLocaleString("default", { month: "short", year: "numeric" });
+      monthMap[key] = 0;
+    }
+
+    for (const record of history) {
+      const key = record.claimedDate.toLocaleString("default", { month: "short", year: "numeric" });
+      if (key in monthMap) {
+        monthMap[key] += parseFloat(record.claimedAmount) || 0;
+      }
+    }
+
+    return Object.entries(monthMap).map(([month, income]) => ({ month, income }));
+  } catch (error) {
+    console.log("something went wrong in getNFTMonthlyIncome", error);
+    return [];
+  }
+};
+
 export const getJustNFTsCount = async ():Promise<number> => {
   try {
     const justNFTs = await prisma.userNFTs.findMany({
@@ -602,6 +654,8 @@ export const getUserNFTBonusHistory = async (
         wallet_address: wallet_address,
       },
     });
+
+    console.log('user',user);
  
     if (!user) {
       return null;
@@ -615,6 +669,7 @@ export const getUserNFTBonusHistory = async (
         claminedDate: "desc",
       },
     });
+    console.log('nftBonusHistory',nftBonusHistory);
  
     return nftBonusHistory ?? null;
   } catch (error) {

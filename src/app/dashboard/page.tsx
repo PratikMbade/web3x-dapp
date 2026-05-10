@@ -22,7 +22,7 @@ export default function HomePage() {
                         <div className="px-4 w-full  flex flex-col gap-4 py-4 md:px-6 md:py-6 lg:flex-row lg:items-center lg:justify-between">
                             <NFTIncomeChart />
                             <NFTCardCount />
-                            <CategoryIncomePieChart data={mockCategoryData} />
+                            {/* <CategoryIncomePieChart data={mockCategoryData} /> */}
 
                         </div>
                     </div>

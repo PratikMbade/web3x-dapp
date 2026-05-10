@@ -6,8 +6,9 @@ import { useHorseTokenBalance } from "@/hooks/useHorseTokenBalance"
 import { useActiveAccount } from "thirdweb/react"
 import { useState, useEffect } from "react"
 import { getUserTeamStats } from "@/actions/user/index"
+import { getUserHighestNFT } from "@/actions/nft"
 import { toast } from "sonner";
-import { slotRanks } from "@/helper";
+import { slotRanks, getNFTName, getNFTNameImg } from "@/helper";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface TeamStats {
@@ -23,6 +24,8 @@ export function SectionCards() {
     const [teamStats, setTeamStats] = useState<TeamStats | null>(null);
     const [teamLoading, setTeamLoading] = useState(false);
     const [userActivePackage,setUserActivePackage] = useState('');
+    const [highestNFT, setHighestNFT] = useState<{ tokenType: number } | null>(null);
+    const [nftLoading, setNftLoading] = useState(false);
 
     const referralLink = activeAccount?.address
         ? `https://web3x.space/registration?rr=${activeAccount.address}`
@@ -38,16 +41,23 @@ export function SectionCards() {
 
         const fetchStats = async () => {
             setTeamLoading(true);
+            setNftLoading(true);
             try {
-                const stats = await getUserTeamStats(activeAccount.address);
+                const [stats, nft] = await Promise.all([
+                    getUserTeamStats(activeAccount.address),
+                    getUserHighestNFT(activeAccount.address),
+                ]);
                 setTeamStats(stats);
                 const activePackage = slotRanks[stats?.packages.length || 0]
-                setUserActivePackage(activePackage)
+                setUserActivePackage(activePackage);
+                setHighestNFT(nft);
             } catch (err) {
                 console.error("Failed to load team stats:", err);
                 setTeamStats(null);
+                setHighestNFT(null);
             } finally {
                 setTeamLoading(false);
+                setNftLoading(false);
             }
         };
 
@@ -217,7 +227,11 @@ export function SectionCards() {
 
                 {/* BG art */}
                 <div className="absolute right-3 top-[12%] opacity-10 pointer-events-none z-0">
-                    <Image src="/just-creator.png" alt="" height={170} width={170} className="object-cover" />
+                    {highestNFT ? (
+                        <Image src={getNFTNameImg(highestNFT.tokenType)} alt="" height={170} width={170} className="object-cover" />
+                    ) : (
+                        <Image src="/just-creator.png" alt="" height={170} width={170} className="object-cover" />
+                    )}
                 </div>
 
                 {/* Header */}
@@ -231,30 +245,60 @@ export function SectionCards() {
                         </div>
                         <div>
                             <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-white/30">Highest Level</p>
-                            <p className="font-bold text-[15px] text-white/[0.82] m-0" style={{ fontFamily: 'Syne, sans-serif' }}>Royalty NFT</p>
+                            <p className="font-bold text-[15px] text-white/[0.82] m-0" style={{ fontFamily: 'Syne, sans-serif' }}>
+                                {nftLoading ? 'Loading…' : highestNFT ? getNFTName(highestNFT.tokenType) : 'No NFT'}
+                            </p>
                         </div>
                     </div>
                     <div className="font-mono text-[10px] tracking-[0.06em] bg-white/[0.04] text-white/30 rounded-full px-[10px] py-[3px] inline-flex items-center gap-1 whitespace-nowrap"
                         style={{ border: '1px dashed rgba(255,255,255,0.14)' }}>
                         <Clock size={10} />
-                        Coming Soon
+                        {highestNFT ? 'Active' : 'Coming Soon'}
                     </div>
                 </div>
 
-                {/* Empty state */}
+                {/* NFT state */}
                 <div className="relative z-10 flex-1">
-                    <div className="font-mono text-[2.6rem] leading-none tracking-tight text-white/[0.13]">—</div>
-                    <p className="font-mono text-[11px] text-white/25 mt-1 flex items-center gap-[5px]">
-                        No NFT active
-                        <span className="font-mono text-[10px] text-white/20">(wallet empty)</span>
-                    </p>
+                    {nftLoading ? (
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-pink-400/60 animate-pulse" />
+                            <span className="font-mono text-[10px] text-white/25">Loading…</span>
+                        </div>
+                    ) : highestNFT ? (
+                        <div className="flex items-center gap-3 mt-1">
+                            <Image
+                                src={getNFTNameImg(highestNFT.tokenType)}
+                                alt={getNFTName(highestNFT.tokenType)}
+                                width={56}
+                                height={56}
+                                className="rounded-xl object-cover"
+                            />
+                            <div>
+                                <p className="font-bold text-[1.1rem] leading-tight text-white/80" style={{ fontFamily: 'Syne, sans-serif' }}>
+                                    {getNFTName(highestNFT.tokenType)}
+                                </p>
+                                <p className="font-mono text-[10px] text-white/30 mt-0.5">Tier {highestNFT.tokenType}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="font-mono text-[2.6rem] leading-none tracking-tight text-white/[0.13]">—</div>
+                            <p className="font-mono text-[11px] text-white/25 mt-1 flex items-center gap-[5px]">
+                                No NFT active
+                                <span className="font-mono text-[10px] text-white/20">(wallet empty)</span>
+                            </p>
+                        </>
+                    )}
                 </div>
 
                 {/* Info box */}
                 <div className="relative z-10 rounded-xl px-[14px] py-[11px]"
                     style={{ background: 'rgba(236,72,153,0.06)', border: '1px solid rgba(236,72,153,0.14)' }}>
                     <p className="text-[12px] text-white/40 leading-relaxed m-0" style={{ fontFamily: 'Syne, sans-serif' }}>
-                        Royalty NFTs unlock passive income streams and will be available after the official launch.
+                        {highestNFT
+                            ? `Your highest active NFT is ${getNFTName(highestNFT.tokenType)} — earning passive royalty income.`
+                            : 'Royalty NFTs unlock passive income streams and will be available after the official launch.'
+                        }
                     </p>
                 </div>
             </div>

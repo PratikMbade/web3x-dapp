@@ -38,7 +38,7 @@ function MintingLoader() {
 const BuyEarthNFT = ({ earthNFTsCount }: Props) => {
   const activeAccount = useActiveAccount();
   const router = useRouter();
-  const energyToken = "0x473f431fDd1D05b889AFccA2C022A66B778d5BB0";
+  const energyToken = "0x9eC40A3f1a91ad370d666d58EB557E0B2C60E591";
   const [isTransactionInProgress, setIsTransactionInProgress] = useState(false);
   const [isTransactionSuccessful, setIsTransactionSuccessful] = useState<boolean | null>(null);
 

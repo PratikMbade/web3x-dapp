@@ -5,13 +5,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getSession } from "@/lib/get-session";
 
 import { NFTBonusHistoryTable } from "@/components/dashboard/income/nft-bonus-history-table";
-import { getUserNFTBonusHistory } from "@/actions/nft";
+import { getUserNFTClaimedHistory } from "@/actions/nft";
 
 export default async function NFTBonusHistoryPage() {
  const session = await getSession();
  const walletAddress = session?.user.wallet_address
   const history = walletAddress
-    ? await getUserNFTBonusHistory(walletAddress.toLowerCase())
+    ? await getUserNFTClaimedHistory(walletAddress.toLowerCase())
     : null;
 
   return (

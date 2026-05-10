@@ -189,17 +189,17 @@ export const slotRanks: Record<number, string> = {
 export const getNFTNameImg = (tokenType: number): string => {
   switch (tokenType) {
     case 0:
-      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1758449155/Just_SpaceshipImg_xksckv.png';
+      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1778404052/JUST_CREATOR_0001-0100009_jvhzxj.png';
     case 1:
-      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1758478856/EarthNFTImg_pzbzee.png';
+      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1778403899/GENESIS_0001-0100000_lqvqig.png';
     case 2:
-      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1758478786/MarsNFTImg_k1sjr4.png';
+      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1778403811/UNITY0001-0100000_lmyxlp.png';
     case 3:
-      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1758478812/VenusNFTImg_vdipav.png';
+      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1778403757/LEGACY0001-0100000_ocuxy5.png';
     case 4:
-      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1758478826/SaturnNFTImg_iswhah.png';
+      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1778403678/INFINITY-Card_kc8mza.png';
     case 5:
-      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1758478801/NeptuneNFTImg_bwhdvi.png';
+      return 'https://res.cloudinary.com/dlttworg3/image/upload/v1778403972/CROWN0001-0100006_e2lrdc.png';
     default:
       return 'UnknownNFT';
   }
