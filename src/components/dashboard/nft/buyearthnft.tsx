@@ -173,8 +173,8 @@ const BuyEarthNFT = ({ earthNFTsCount }: Props) => {
               <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Current Price</p>
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-zinc-400" />
-                <span className="text-[22px] font-light text-white tracking-tight">50</span>
-                <span className="text-[13px] text-zinc-400 font-medium">MUBooster Token</span>
+                <span className="text-[22px] font-light text-white tracking-tight">125</span>
+                <span className="text-[13px] text-zinc-400 font-medium">Energy Token</span>
               </div>
             </div>
           </div>

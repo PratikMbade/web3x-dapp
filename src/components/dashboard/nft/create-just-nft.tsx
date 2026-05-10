@@ -128,7 +128,7 @@ const CreateJustNFT = ({ justNFTsCount }: Props) => {
             <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
               <Info className="h-4 w-4 text-zinc-600 mt-0.5 shrink-0" />
               <p className="text-[13px] text-zinc-500 leading-relaxed">
-                Requires <span className="text-zinc-300 font-medium">4 active packages</span> in Metaunity to claim your Just Creator NFT.
+                Requires <span className="text-zinc-300 font-medium">4 active packages</span> in Web3X to claim your Just Creator NFT.
               </p>
             </div>
           </div>

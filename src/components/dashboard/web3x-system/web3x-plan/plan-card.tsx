@@ -291,7 +291,7 @@ const pathToBuy = [USDT, WBNB]; // <-- strings, not bare hex literals
                         <span className="text-white text-lg font-semibold tracking-tight">
                             {plan.price}
                         </span>
-                        <span className="text-neutral-500 text-sm ml-1">WBNB</span>
+                        <span className="text-neutral-500 text-sm ml-1">HRS</span>
                     </div>
                 </div>
 

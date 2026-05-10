@@ -102,7 +102,7 @@ export default function PlanStructure({ planName, globalCount, highestPlanetBoug
 
             {/* Center Planet - Always Purple */}
 
-      <Link href={'/dashboard/web3x-system/matrix-tree'}>
+      <Link href={'#'}>
              <div className="absolute top-[26%] md:top-[29%] right-[40%] md:right-[41%]">
                 <Image
                     src="/Orange.png"
