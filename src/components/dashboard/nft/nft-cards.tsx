@@ -73,7 +73,6 @@ export function NFTCard({ nftName, nftLevel, nftId }: NFTCardType) {
         {/* Bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0a0a0f] to-transparent" />
       </div>
-
       {/* Info */}
       <div className="px-4 pb-4 pt-3">
         <div className="flex items-start justify-between mb-3">
@@ -92,7 +91,11 @@ export function NFTCard({ nftName, nftLevel, nftId }: NFTCardType) {
               : `/dashboard/nft/${nftName}/${nftId}`
           }
         >
-          <motion.button
+         {
+          nftName ?  
+          ''
+          :
+           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="w-full flex items-center justify-center gap-2 text-[13px] font-bold rounded-xl py-3 cursor-pointer transition-all"
@@ -100,11 +103,14 @@ export function NFTCard({ nftName, nftLevel, nftId }: NFTCardType) {
               background: "linear-gradient(135deg, #ffc83c 0%, #ff8c00 100%)",
               color: "#0a0a0f",
             }}
-          >
+           >
             <Zap style={{ width: 14, height: 14 }} />
             Upgrade NFT
           </motion.button>
+          
+          }
         </Link>
+
       </div>
     </motion.div>
   );

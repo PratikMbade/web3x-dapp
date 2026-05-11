@@ -9,12 +9,12 @@ import { useState } from "react"
 import { useActiveAccount } from 'thirdweb/react'
 import { toast } from 'sonner'
 import { FadeLoader } from 'react-spinners'
-import { contractInstance, metaunityAddress, wbnbContractInstance } from '@/contract/contract'
+import { contractInstance, metaunityAddress } from '@/contract/contract'
+import { horseTokenContractInstance } from '@/contract/horse-token-contract/contract-instance'
 import { ethers } from 'ethers'
 import { useRouter } from 'next/navigation'
 import { isPackageBuyStored } from '@/actions/metaunity-system'
 import { extractEventsFromReceipt, waitForPackageBuyEvent } from '@/contract/event-poller'
-import { usdtToWbnb } from "@/lib/utils"
 import { Package } from "@/generated/prisma/client"
 
 interface PlanCardProps {
@@ -42,8 +42,6 @@ export default function PlanCard({ id, plan, userPackage }: PlanCardProps) {
             setIsLoading(true)
             setIsPending(true)
 
-            const contractInst = await wbnbContractInstance(activeAccount)
-
             const metaunityContract = await contractInstance(activeAccount)
             if (!metaunityContract) {
                 toast.error('An error occurred while connecting...')
@@ -61,15 +59,16 @@ export default function PlanCard({ id, plan, userPackage }: PlanCardProps) {
                 return;
             }
 
-            if (!contractInst) {
+            const horseContractInst = await horseTokenContractInstance(activeAccount)
+            if (!horseContractInst) {
                 toast.error('An error occurred while connecting...')
                 return;
             }
 
-            const wbnbAmountReadable = await usdtToWbnb('10240');
-            const wad = ethers.utils.parseUnits(wbnbAmountReadable, 18);
+            const hrsAmount = (Number(plan.price) / 0.1902).toFixed(18)
+            const wad = ethers.utils.parseUnits(hrsAmount, 18);
 
-            const approve = await contractInst.approve(metaunityAddress, wad)
+            const approve = await horseContractInst.approve(metaunityAddress, wad)
             const result = await approve.wait()
 
             if (result.status === 1) {

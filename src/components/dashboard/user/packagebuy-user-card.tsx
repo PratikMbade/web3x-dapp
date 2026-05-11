@@ -8,12 +8,12 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, Clock, ArrowRight } from "lucide-react"
 import { toast } from 'sonner'
-import { contractInstance, metaunityAddress, wbnbContractInstance } from '@/contract/contract'
+import { contractInstance, metaunityAddress } from '@/contract/contract'
+import { horseTokenContractInstance } from '@/contract/horse-token-contract/contract-instance'
 import { ethers } from 'ethers'
 import { FadeLoader } from 'react-spinners'
 import { useRouter } from 'next/navigation'
 import { extractEventsFromReceipt, waitForPackageBuyEvent } from '@/contract/event-poller'
-import { usdtToWbnb } from "@/lib/utils"
 import { getUserHighestPackage } from "@/actions/user"
 import { useActiveAccount } from "thirdweb/react"
 import { isPackageBuyStored } from "@/actions/metaunity-system"
@@ -39,7 +39,6 @@ const planNames: Record<number, string> = {
 
 
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const packageAmount: Record<number, string> = {
     1: "5",
     2: "10",
@@ -120,14 +119,11 @@ export default function PackageBuyUserCard() {
             }
             setIsPending(true)
 
-            const contractIns = await wbnbContractInstance(activeAccount);
+            const contractIns = await horseTokenContractInstance(activeAccount);
 
-
-            const wbnbAmountReadable = await usdtToWbnb('10240');
-            // returns e.g. "0.01523" (human-readable WBNB)
-
-            // Convert to BigNumber in wei (18 decimals for WBNB)
-            const wad = ethers.utils.parseUnits(wbnbAmountReadable, 18);
+            const usdtPrice = packageAmount[Number(nextPlan)] ?? '10240'
+            const hrsAmount = (Number(usdtPrice) / 0.1902).toFixed(18)
+            const wad = ethers.utils.parseUnits(hrsAmount, 18);
 
             const approve = await contractIns!.approve(
                 metaunityAddress,

@@ -145,7 +145,7 @@ export const setNFTsToDB = async (
       },
     });
 
-    return { status: true, message: 'Earth NFT mint successfully' };
+    return { status: true, message: 'Genesis NFT mint successfully' };
   } catch (error) {
     return {
       status: false,
