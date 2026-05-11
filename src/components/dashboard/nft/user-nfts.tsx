@@ -48,9 +48,9 @@ const disableIds = useNFTStore((s) => s.disableIds);
   ) ?? [];
 
   return (
-    <div className="border-t flex flex-col mb-10">
+    <div className="border-t flex flex-col mb-10" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
       <div className="mx-16 my-4">
-        <p className="text-3xl font-semibold text-center lg:text-start mt-3">
+        <p className="text-3xl font-semibold text-center lg:text-start mt-3" style={{ color: "#f0f0f8", fontFamily: "'Outfit', sans-serif" }}>
           My NFTs
         </p>
       </div>
@@ -62,7 +62,12 @@ const disableIds = useNFTStore((s) => s.disableIds);
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="w-80 justify-between bg-black/40 text-zinc-400 border-zinc-700 hover:bg-black/60"
+                className="w-80 justify-between hover:bg-black/60"
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.5)",
+                }}
               >
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
@@ -76,18 +81,20 @@ const disableIds = useNFTStore((s) => s.disableIds);
             </DropdownMenuTrigger>
 
             <DropdownMenuContent
-              className="w-[calc(100vw-32px)] bg-zinc-900 border-zinc-700"
+              className="w-[calc(100vw-32px)]"
+              style={{ background: "#0f0f1a", border: "1px solid rgba(255,255,255,0.08)" }}
               align="center"
             >
               {nftCategories.map((category) => (
                 <DropdownMenuItem
                   key={category.value}
                   className="flex items-center justify-between py-2 cursor-pointer"
+                  style={{ color: selectedCategory === category.value ? "#ffc83c" : "rgba(255,255,255,0.5)" }}
                   onClick={() => setSelectedCategory(category.value)}
                 >
                   {category.label}
                   {selectedCategory === category.value && (
-                    <Check className="h-4 w-4 text-yellow-500" />
+                    <Check className="h-4 w-4" style={{ color: "#ffc83c" }} />
                   )}
                 </DropdownMenuItem>
               ))}
@@ -128,12 +135,21 @@ const disableIds = useNFTStore((s) => s.disableIds);
         {/* Desktop Tabs */}
         <div className="hidden md:block">
           <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-            <TabsList className="h-12 flex flex-wrap w-auto items-center justify-start bg-black/40 p-1 border">
+            <TabsList className="h-12 flex flex-wrap w-auto items-center justify-start p-1"
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                fontFamily: "'Outfit', sans-serif",
+              }}
+            >
               {nftCategories.map((category) => (
                 <TabsTrigger
                   key={category.value}
                   value={category.value}
-                  className="relative h-9 rounded-full px-6 text-base font-medium text-zinc-400 transition-all hover:text-zinc-100 data-[state=active]:bg-yellow-500 data-[state=active]:text-black"
+                  className="relative h-9 rounded-full px-6 text-base font-medium transition-all"
+                  style={{
+                    color: selectedCategory === category.value ? "#ffc83c" : "rgba(255,255,255,0.4)",
+                  }}
                 >
                   {category.label}
                 </TabsTrigger>

@@ -286,12 +286,17 @@ const pathToBuy = [USDT, WBNB]; // <-- strings, not bare hex literals
                 {/* Price Display */}
                 <div className="px-5 py-4 flex items-center justify-between">
                     <span className="text-neutral-500 text-xs font-medium uppercase tracking-widest">Price</span>
-                    <div className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4 text-neutral-300" />
-                        <span className="text-white text-lg font-semibold tracking-tight">
-                            {plan.price}
-                        </span>
-                        <span className="text-neutral-500 text-sm ml-1">HRS</span>
+                    <div className="flex flex-col items-end gap-0.5">
+                        <div className="flex items-center gap-1">
+                            <span className="text-white text-lg font-semibold tracking-tight">
+                                {(Number(plan.price) / 0.1902).toFixed(2)}
+                            </span>
+                            <span className="text-neutral-500 text-sm ml-1">HRS</span>
+                        </div>
+                        <div className="flex items-center gap-0.5">
+                            <DollarSign className="h-3 w-3 text-neutral-600" />
+                            <span className="text-neutral-600 text-xs">{Number(plan.price)} USDT</span>
+                        </div>
                     </div>
                 </div>
 
