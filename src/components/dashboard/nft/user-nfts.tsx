@@ -21,6 +21,7 @@ import { useNFTStore } from '@/store/recoil-store/nftStates';
 
 const nftCategories = [
   { value: 'all', label: 'All NFTs' },
+  { value: 'just', label: 'Just Creator' },
   { value: 'earth', label: 'Genesis NFTs' },
   { value: 'mars', label: 'Unity NFTs' },
   { value: 'venus', label: 'Legacy NFTs' },
@@ -49,7 +50,7 @@ const disableIds = useNFTStore((s) => s.disableIds);
 
   return (
     <div className="border-t flex flex-col mb-10" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-      <div className="mx-16 my-4">
+      <div className="mx-4 md:mx-16 my-4">
         <p className="text-3xl font-semibold text-center lg:text-start mt-3" style={{ color: "#f0f0f8", fontFamily: "'Outfit', sans-serif" }}>
           My NFTs
         </p>
@@ -62,7 +63,7 @@ const disableIds = useNFTStore((s) => s.disableIds);
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="w-80 justify-between hover:bg-black/60"
+                className="w-full justify-between hover:bg-black/60"
                 style={{
                   background: "rgba(255,255,255,0.03)",
                   border: "1px solid rgba(255,255,255,0.08)",
@@ -101,9 +102,9 @@ const disableIds = useNFTStore((s) => s.disableIds);
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="flex items-center justify-center w-full">
+          <div className="mt-4">
             {selectedCategory === 'all' ? (
-              <div className="mx-16 grid grid-cols-1 gap-y-5 lg:grid-cols-4 xl:grid-cols-4 lg:gap-x-6 mb-7">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-7">
                 {userNFTs?.map((data) => (
                   <NFTCard
                     key={data.id}
@@ -114,7 +115,7 @@ const disableIds = useNFTStore((s) => s.disableIds);
                 ))}
               </div>
             ) : (
-              <div className="mx-16 grid grid-cols-1 gap-y-5 lg:grid-cols-4 xl:grid-cols-4 lg:gap-x-6 mb-7">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-7">
                 {filteredNFTs.length > 0 ? (
                   filteredNFTs.map((data) => (
                     <NFTCard
@@ -125,7 +126,7 @@ const disableIds = useNFTStore((s) => s.disableIds);
                     />
                   ))
                 ) : (
-                  <p>No NFTs found for the selected category.</p>
+                  <p style={{ color: "rgba(255,255,255,0.4)" }}>No NFTs found for the selected category.</p>
                 )}
               </div>
             )}
@@ -135,7 +136,7 @@ const disableIds = useNFTStore((s) => s.disableIds);
         {/* Desktop Tabs */}
         <div className="hidden md:block">
           <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-            <TabsList className="h-12 flex flex-wrap w-auto items-center justify-start p-1"
+            <TabsList className="h-12 flex flex-nowrap overflow-x-auto w-full items-center justify-start p-1 scrollbar-hide"
               style={{
                 background: "rgba(255,255,255,0.03)",
                 border: "1px solid rgba(255,255,255,0.07)",
@@ -159,7 +160,7 @@ const disableIds = useNFTStore((s) => s.disableIds);
             {selectedCategory === 'all' ? (
               <TabsContent
                 value={'all'}
-                className="grid grid-cols-1 gap-y-5 lg:grid-cols-2 xl:grid-cols-4 lg:gap-x-6 mb-7"
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-7"
               >
                 {userNFTs?.map((data) => (
                   <NFTCard
@@ -173,7 +174,7 @@ const disableIds = useNFTStore((s) => s.disableIds);
             ) : (
               <TabsContent
                 value={selectedCategory}
-                className="grid grid-cols-1 gap-y-5 lg:grid-cols-4 xl:grid-cols-4 lg:gap-x-6 mb-7"
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-7"
               >
                 {filteredNFTs.length > 0 ? (
                   filteredNFTs.map((data) => (
@@ -185,7 +186,7 @@ const disableIds = useNFTStore((s) => s.disableIds);
                     />
                   ))
                 ) : (
-                  <p>No NFTs found for the selected category.</p>
+                  <p style={{ color: "rgba(255,255,255,0.4)" }}>No NFTs found for the selected category.</p>
                 )}
               </TabsContent>
             )}

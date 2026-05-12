@@ -15,6 +15,7 @@ interface NFTCardType {
 }
 
 export function NFTCard({ nftName, nftLevel, nftId }: NFTCardType) {
+  console.log('nftName',nftName);
   useEffect(() => {
     animate(
       ".nft-hero-img",
@@ -86,13 +87,13 @@ export function NFTCard({ nftName, nftLevel, nftId }: NFTCardType) {
 
         <Link
           href={
-            nftName === "Just Spaceship"
+            nftName === "Just Creator"
               ? "/dashboard/nft"
               : `/dashboard/nft/${nftName}/${nftId}`
           }
         >
          {
-          nftName ?  
+          nftName === "Just Creator"?  
           ''
           :
            <motion.button

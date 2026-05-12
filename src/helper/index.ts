@@ -226,6 +226,8 @@ export const getNFTType = (nftName: string): number => {
 
 export const getNFTForTab = (tokenType: string): number => {
   switch (tokenType) {
+    case 'just':
+      return 0;
     case 'earth':
       return 1;
     case 'mars':
@@ -236,9 +238,8 @@ export const getNFTForTab = (tokenType: string): number => {
       return 4;
     case 'neptune':
       return 5;
-
     default:
-      return 0;
+      return -1;
   }
 };
 
