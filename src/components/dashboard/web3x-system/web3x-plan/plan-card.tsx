@@ -5,12 +5,12 @@ import { Users2, DollarSign, CheckCircle2, Zap, ShieldCheck } from "lucide-react
 import PlanStructure from "./new-plan-structure"
 import { Button } from "@/components/ui/button"
 import type { Plan } from "@/types/plan"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useActiveAccount } from 'thirdweb/react'
 import { toast } from 'sonner'
 import { FadeLoader } from 'react-spinners'
 import { contractInstance, metaunityAddress } from '@/contract/contract'
-import { horseTokenContractInstance } from '@/contract/horse-token-contract/contract-instance'
+import { horseTokenContractInstance, getHorsePrice } from '@/contract/horse-token-contract/contract-instance'
 import { ethers } from 'ethers'
 import { useRouter } from 'next/navigation'
 import { isPackageBuyStored } from '@/actions/metaunity-system'
@@ -30,7 +30,12 @@ export default function PlanCard({ id, plan, userPackage }: PlanCardProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [isPending, setIsPending] = useState(false)
     const [isBought, setIsBought] = useState(false)
+    const [horsePrice, setHorsePrice] = useState<number>(0.1902)
     const router = useRouter()
+
+    useEffect(() => {
+        getHorsePrice().then(setHorsePrice)
+    }, [])
 
     const handleApprove = async () => {
         try {
@@ -65,7 +70,7 @@ export default function PlanCard({ id, plan, userPackage }: PlanCardProps) {
                 return;
             }
 
-            const hrsAmount = (Number(plan.price) / 0.1902).toFixed(18)
+            const hrsAmount = (Number(plan.price) / horsePrice).toFixed(18)
             const wad = ethers.utils.parseUnits(hrsAmount, 18);
 
             const approve = await horseContractInst.approve(metaunityAddress, wad)
@@ -288,7 +293,7 @@ const pathToBuy = [USDT, WBNB]; // <-- strings, not bare hex literals
                     <div className="flex flex-col items-end gap-0.5">
                         <div className="flex items-center gap-1">
                             <span className="text-white text-lg font-semibold tracking-tight">
-                                {(Number(plan.price) / 0.1902).toFixed(2)}
+                                {(Number(plan.price) / horsePrice).toFixed(2)}
                             </span>
                             <span className="text-neutral-500 text-sm ml-1">HRS</span>
                         </div>

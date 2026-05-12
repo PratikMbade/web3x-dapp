@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, Clock, ArrowRight } from "lucide-react"
 import { toast } from 'sonner'
 import { contractInstance, metaunityAddress } from '@/contract/contract'
-import { horseTokenContractInstance } from '@/contract/horse-token-contract/contract-instance'
+import { horseTokenContractInstance, getHorsePrice } from '@/contract/horse-token-contract/contract-instance'
 import { ethers } from 'ethers'
 import { FadeLoader } from 'react-spinners'
 import { useRouter } from 'next/navigation'
@@ -63,7 +63,12 @@ export default function PackageBuyUserCard() {
     const [isActivating, setIsActivating] = useState(false)
     const activeAccount = useActiveAccount();
     const [isPending, setIsPending] = useState(false);
+    const [horsePrice, setHorsePrice] = useState<number>(0.1902);
     const router = useRouter();
+
+    useEffect(() => {
+        getHorsePrice().then(setHorsePrice)
+    }, [])
 
     // Debouncing effect for wallet address verification
     useEffect(() => {
@@ -122,7 +127,7 @@ export default function PackageBuyUserCard() {
             const contractIns = await horseTokenContractInstance(activeAccount);
 
             const usdtPrice = packageAmount[Number(nextPlan)] ?? '10240'
-            const hrsAmount = (Number(usdtPrice) / 0.1902).toFixed(18)
+            const hrsAmount = (Number(usdtPrice) / horsePrice).toFixed(18)
             const wad = ethers.utils.parseUnits(hrsAmount, 18);
 
             const approve = await contractIns!.approve(
@@ -243,10 +248,16 @@ const pathToBuy = [USDT,WBNB]; // <-- strings, not bare hex literals
 
         } catch (error: any) {
             console.log('error in handleActivate', error)
+            const rawData = error?.data ?? error?.error?.data ?? error?.cause?.data;
+            if (rawData) {
+                console.log('contract revert data (look up on https://openchain.xyz/signatures?query=' + rawData.slice(0, 10) + '):', rawData);
+            }
             if (error?.message?.includes('SafeMath') || error?.message?.includes('sub failed')) {
                 toast.error("You haven't approved enough USDT. Please approve the required amount and try again.");
+            } else if (error?.message?.includes('AbiErrorSignatureNotFoundError') || error?.message?.includes('not found on ABI')) {
+                toast.error(`Contract reverted with unknown error ${rawData?.slice(0,10) ?? ''}. ABI may be outdated — check the browser console.`);
             } else {
-                toast.error('An error occurred while approving the transaction. Please try again.');
+                toast.error(error?.reason ?? error?.message ?? 'An error occurred while activating the plan. Please try again.');
             }
             setIsPending(false)
         }

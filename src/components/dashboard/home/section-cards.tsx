@@ -9,6 +9,7 @@ import { getUserTeamStats } from "@/actions/user/index"
 import { getUserHighestNFT } from "@/actions/nft"
 import { toast } from "sonner";
 import { slotRanks, getNFTName, getNFTNameImg } from "@/helper";
+import { getHorsePrice } from "@/contract/horse-token-contract/contract-instance";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface TeamStats {
@@ -26,6 +27,8 @@ export function SectionCards() {
     const [userActivePackage,setUserActivePackage] = useState('');
     const [highestNFT, setHighestNFT] = useState<{ tokenType: number } | null>(null);
     const [nftLoading, setNftLoading] = useState(false);
+    const [horsePrice, setHorsePrice] = useState<number | null>(null);
+    const [horsePriceLoading, setHorsePriceLoading] = useState(false);
 
     const referralLink = activeAccount?.address
         ? `https://web3x.space/registration?rr=${activeAccount.address}`
@@ -63,6 +66,13 @@ export function SectionCards() {
 
         fetchStats();
     }, [activeAccount?.address]);
+
+    useEffect(() => {
+        setHorsePriceLoading(true);
+        getHorsePrice()
+            .then(price => setHorsePrice(price))
+            .finally(() => setHorsePriceLoading(false));
+    }, []);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(referralLink);
@@ -349,7 +359,7 @@ export function SectionCards() {
                     <div className="font-mono text-[10px] tracking-[0.06em] bg-white/[0.04] text-white/30 rounded-full px-[10px] py-[3px] inline-flex items-center gap-1 whitespace-nowrap"
                         style={{ border: '1px dashed rgba(255,255,255,0.14)' }}>
                         <Clock size={10} />
-                        Coming Soon
+                        Active
                     </div>
                 </div>
 
@@ -380,11 +390,20 @@ export function SectionCards() {
                     <div className="flex justify-between items-center">
                         <div>
                             <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-white/30">Token Price</p>
-                            <p className="font-mono font-medium text-[16px] text-white/55 mt-[3px]">Soon Update</p>
+                            {horsePriceLoading ? (
+                                <div className="flex items-center gap-1.5 mt-0.75">
+                                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'rgba(251,146,60,0.9)' }} />
+                                    <span className="font-mono text-[13px] text-white/[0.28]">Loading…</span>
+                                </div>
+                            ) : (
+                                <p className="font-mono font-medium text-[16px] mt-0.75" style={{ color: 'rgba(251,146,60,0.85)' }}>
+                                    ${horsePrice !== null ? horsePrice.toFixed(4) : '—'}
+                                </p>
+                            )}
                         </div>
                         <div className="text-right">
-                            <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-white/30">Liquidity</p>
-                            <p className="font-mono text-[12px] mt-[3px]" style={{ color: 'rgba(234,179,8,0.6)' }}>Post-launch</p>
+                            {/* <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-white/30">Liquidity</p> */}
+                            {/* <p className="font-mono text-[12px] mt-[3px]" style={{ color: 'rgba(234,179,8,0.6)' }}>Post-launch</p> */}
                         </div>
                     </div>
                 </div>
