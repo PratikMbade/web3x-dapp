@@ -366,7 +366,7 @@ export default function MatrixIncomeTable(props: Props) {
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Badge variant="secondary" className="font-mono">
-                                                        {member.amount}
+                                                        ${member.amount.toFixed(2)} USDT
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-center">

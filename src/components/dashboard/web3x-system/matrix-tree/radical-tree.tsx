@@ -554,41 +554,72 @@ const StatsBar: React.FC<{ metadata?: ApiResponse['metadata'] }> = ({ metadata }
 
 // ─── Node Tooltip ─────────────────────────────────────────────────────────────
 
-const NodeTooltip: React.FC<{ data: TooltipData; onClose: () => void }> = ({ data, onClose }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.92, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-    exit={{ opacity: 0, scale: 0.92, y: 8 }} transition={{ duration: 0.2 }}
-    className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}
-  >
-    <div
-      className="relative rounded-2xl p-5 max-w-xs w-full"
-      style={{ background: 'linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.98))', border: '1px solid rgba(51,65,85,0.8)', boxShadow: '0 24px 80px rgba(0,0,0,0.7)', backdropFilter: 'blur(20px)' }}
-      onClick={e => e.stopPropagation()}
+const NodeTooltip: React.FC<{ data: TooltipData; onClose: () => void }> = ({ data, onClose }) => {
+  const [copied, setCopied] = useState<string | null>(null)
+
+  const copy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(key)
+    setTimeout(() => setCopied(null), 1500)
+  }
+
+  const rows: { label: string; display: string; copyValue?: string; copyKey?: string }[] = [
+    { label: 'Reg ID', display: `#${data.regId}` },
+    { label: 'Wallet', display: `${data.wallet.slice(0, 8)}…${data.wallet.slice(-6)}`, copyValue: data.wallet, copyKey: 'wallet' },
+    { label: 'Sponsor', display: `${data.sponsor.slice(0, 8)}…${data.sponsor.slice(-6)}`, copyValue: data.sponsor, copyKey: 'sponsor' },
+  ]
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.92, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.92, y: 8 }} transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{
-            background: data.nodeColor === 'blue' ? '#0ea5e9' : data.nodeColor === 'green' ? '#22c55e' : '#ec4899',
-            boxShadow: `0 0 8px ${data.nodeColor === 'blue' ? 'rgba(14,165,233,0.7)' : data.nodeColor === 'green' ? 'rgba(34,197,94,0.7)' : 'rgba(236,72,153,0.7)'}`,
-          }} />
-          <span className="text-xs font-semibold tracking-widest uppercase text-slate-400">Node Info</span>
+      <div
+        className="relative rounded-2xl p-5 max-w-xs w-full"
+        style={{ background: 'linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.98))', border: '1px solid rgba(51,65,85,0.8)', boxShadow: '0 24px 80px rgba(0,0,0,0.7)', backdropFilter: 'blur(20px)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{
+              background: data.nodeColor === 'blue' ? '#0ea5e9' : data.nodeColor === 'green' ? '#22c55e' : '#ec4899',
+              boxShadow: `0 0 8px ${data.nodeColor === 'blue' ? 'rgba(14,165,233,0.7)' : data.nodeColor === 'green' ? 'rgba(34,197,94,0.7)' : 'rgba(236,72,153,0.7)'}`,
+            }} />
+            <span className="text-xs font-semibold tracking-widest uppercase text-slate-400">Node Info</span>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors text-lg leading-none">×</button>
         </div>
-        <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors text-lg leading-none">×</button>
+        {rows.map(({ label, display, copyValue, copyKey }) => (
+          <div key={label} className="flex items-center justify-between py-2 border-b border-slate-800/60 last:border-0">
+            <span className="text-[11px] text-slate-500 tracking-wide">{label}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-medium text-white/90" style={{ fontFamily: "'DM Mono',monospace" }}>{display}</span>
+              {copyValue && copyKey && (
+                <button
+                  onClick={() => copy(copyValue, copyKey)}
+                  className="text-slate-600 hover:text-amber-400 transition-colors"
+                  title={`Copy ${label}`}
+                >
+                  {copied === copyKey ? (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
-      {[
-        { label: 'Reg ID', value: `#${data.regId}` },
-        { label: 'Wallet', value: `${data.wallet.slice(0, 8)}…${data.wallet.slice(-6)}` },
-        { label: 'Sponsor', value: `${data.sponsor.slice(0, 8)}…${data.sponsor.slice(-6)}` },
-        { label: 'Amount', value: `${parseFloat(data.amount).toFixed(4)} ETH` },
-      ].map(({ label, value }) => (
-        <div key={label} className="flex items-center justify-between py-2 border-b border-slate-800/60 last:border-0">
-          <span className="text-[11px] text-slate-500 tracking-wide">{label}</span>
-          <span className="text-[11px] font-medium text-white/90" style={{ fontFamily: "'DM Mono',monospace" }}>{value}</span>
-        </div>
-      ))}
-    </div>
-  </motion.div>
-)
+    </motion.div>
+  )
+}
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
