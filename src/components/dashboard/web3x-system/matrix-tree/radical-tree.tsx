@@ -215,7 +215,7 @@ const SVGNode: React.FC<SVGNodeProps> = ({
 
 interface OrbitalCanvasProps {
   walletAddress: string
-  level1Nodes: TreeNode[]
+  level1Nodes: (TreeNode | null)[]
   level2Nodes: { parentIndex: number; node: TreeNode | null; slotIndex: number }[]
   onNodeClick: (data: TooltipData) => void
   animKey: string
@@ -617,15 +617,61 @@ export const RadialMatrixTree: React.FC<RadialMatrixTreeProps> = ({ walletAddres
   }, [walletAddress, selectedChain, selectedPackage])
 
   const { level1Nodes, level2Nodes } = useMemo(() => {
-    if (!apiData) return { level1Nodes: [] as TreeNode[], level2Nodes: [] as { parentIndex: number; node: TreeNode | null; slotIndex: number }[] }
-    const posOrder: Record<string, number> = { left: 0, middle: 1, right: 2 }
-    const sorted = [...apiData.matrixTrees].sort((a, b) => (posOrder[a.position] ?? 99) - (posOrder[b.position] ?? 99))
+    // L1 visual slots — L1_POS angles: slot0=-90°(top), slot1=30°(lower-right), slot2=150°(lower-left)
+    const l1PosToSlot: Record<string, number> = { left: 2, middle: 0, right: 1 }
+
+    if (!apiData) {
+      // parentIndex centred: [0,0,1,1,1,2,2,2,0]
+      const centredParent = [0, 0, 1, 1, 1, 2, 2, 2, 0]
+      const emptyL2 = Array.from({ length: 9 }, (_, i) => ({ parentIndex: centredParent[i], node: null as TreeNode | null, slotIndex: i }))
+      return { level1Nodes: [null, null, null] as (TreeNode | null)[], level2Nodes: emptyL2 }
+    }
+
+    // Place each L1 node into its fixed visual slot
+    const level1: (TreeNode | null)[] = [null, null, null]
+    apiData.matrixTrees.forEach(node => {
+      const pos = node.position?.trim().toLowerCase()
+      const slot = l1PosToSlot[pos]
+      if (slot !== undefined) level1[slot] = node
+    })
+
+    // Group L2 nodes by upline address
     const byUpline: Record<string, TreeNode[]> = {}
-    apiData.downlineTrees.forEach(d => { if (!byUpline[d.upline_address]) byUpline[d.upline_address] = []; byUpline[d.upline_address].push(d) })
-    const level2: { parentIndex: number; node: TreeNode | null; slotIndex: number }[] = []
-    sorted.forEach((parent, pi) => { const ch = byUpline[parent.wallet_address] || []; for (let i = 0; i < 3; i++) level2.push({ parentIndex: pi, node: ch[i] || null, slotIndex: pi * 3 + i }) })
-    for (let i = sorted.length; i < 3; i++) for (let j = 0; j < 3; j++) level2.push({ parentIndex: i, node: null, slotIndex: i * 3 + j })
-    return { level1Nodes: sorted, level2Nodes: level2 }
+    apiData.downlineTrees.forEach(d => {
+      const key = d.upline_address.toLowerCase()
+      if (!byUpline[key]) byUpline[key] = []
+      byUpline[key].push(d)
+    })
+
+    // L2_POS has 9 nodes at 40° intervals starting at -90°.
+    // L2[3*pi] sits at the exact same angle as L1[pi], so each parent's 3 children
+    // are centered around that anchor: left=(3pi-1)%9, middle=3pi, right=(3pi+1)%9
+    const level2: { parentIndex: number; node: TreeNode | null; slotIndex: number }[] =
+      Array.from({ length: 9 }, (_, i) => ({ parentIndex: 0, node: null, slotIndex: i }))
+
+    // Pre-assign parentIndex for each L2 slot using the centred layout
+    // pi=0 owns indices 8,0,1 | pi=1 owns 2,3,4 | pi=2 owns 5,6,7
+    for (let pi = 0; pi < 3; pi++) {
+      const leftIdx  = (3 * pi - 1 + 9) % 9
+      const midIdx   = 3 * pi
+      const rightIdx = (3 * pi + 1) % 9
+      level2[leftIdx].parentIndex  = pi
+      level2[midIdx].parentIndex   = pi
+      level2[rightIdx].parentIndex = pi
+
+      const parent = level1[pi]
+      if (!parent) continue
+      const children = byUpline[parent.wallet_address.toLowerCase()] ?? []
+
+      children.forEach(child => {
+        const pos = child.position?.trim().toLowerCase()
+        if (pos === 'left')   level2[leftIdx].node  = child
+        if (pos === 'middle') level2[midIdx].node   = child
+        if (pos === 'right')  level2[rightIdx].node = child
+      })
+    }
+
+    return { level1Nodes: level1, level2Nodes: level2 }
   }, [apiData])
 
   return (
@@ -691,7 +737,7 @@ export const RadialMatrixTree: React.FC<RadialMatrixTreeProps> = ({ walletAddres
             )}
           </AnimatePresence>
 
-          {!loading && !error && level1Nodes.length === 0 && (
+          {!loading && !error && level1Nodes.every(n => !n) && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-10">
               <div className="text-3xl mb-3 opacity-30">◎</div>
               <p className="text-slate-600 text-sm">No nodes for Package {selectedPackage} · Recycle {selectedChain}</p>

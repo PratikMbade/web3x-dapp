@@ -391,7 +391,6 @@ export const getUserHighestNFT = async (
     const userNftTypeContainer = await prisma.userNFTs.findFirst({
       where: {
         userId: user.id,
-        tokenType: { not: 0 },
       },
       orderBy: {
         tokenType: 'desc',

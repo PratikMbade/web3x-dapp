@@ -60,6 +60,8 @@ export async function getRadialTreeData(
       where: { upline_address: normalizedAddress, packageNumber, chainId },
     });
 
+    console.log('[radial-tree] L1 rows:', level1Rows.map(r => ({ wallet: r.wallet_address, position: r.position, chainId: r.chainId, pkg: r.packageNumber })));
+
     const level1Addresses = level1Rows.map((r) => r.wallet_address.toLowerCase());
 
     // Level 2 matrix rows

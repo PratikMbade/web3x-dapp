@@ -9,8 +9,8 @@ import { useState, useEffect } from "react"
 import { useActiveAccount } from 'thirdweb/react'
 import { toast } from 'sonner'
 import { FadeLoader } from 'react-spinners'
-import { contractInstance, metaunityAddress } from '@/contract/contract'
-import { horseTokenContractInstance, getHorsePrice } from '@/contract/horse-token-contract/contract-instance'
+import { contractInstance, metaunityAddress, getPackageTokenPrice } from '@/contract/contract'
+import { horseTokenContractInstance } from '@/contract/horse-token-contract/contract-instance'
 import { ethers } from 'ethers'
 import { useRouter } from 'next/navigation'
 import { isPackageBuyStored } from '@/actions/metaunity-system'
@@ -30,12 +30,12 @@ export default function PlanCard({ id, plan, userPackage }: PlanCardProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [isPending, setIsPending] = useState(false)
     const [isBought, setIsBought] = useState(false)
-    const [horsePrice, setHorsePrice] = useState<number>(0.1902)
+    const [packageTokenAmount, setPackageTokenAmount] = useState<ethers.BigNumber>(ethers.BigNumber.from(0))
     const router = useRouter()
 
     useEffect(() => {
-        getHorsePrice().then(setHorsePrice)
-    }, [])
+        getPackageTokenPrice(id).then(setPackageTokenAmount)
+    }, [id])
 
     const handleApprove = async () => {
         try {
@@ -70,8 +70,7 @@ export default function PlanCard({ id, plan, userPackage }: PlanCardProps) {
                 return;
             }
 
-            const hrsAmount = (Number(plan.price) / horsePrice).toFixed(18)
-            const wad = ethers.utils.parseUnits(hrsAmount, 18);
+            const wad = packageTokenAmount;
 
             const approve = await horseContractInst.approve(metaunityAddress, wad)
             const result = await approve.wait()
@@ -293,7 +292,7 @@ const pathToBuy = [USDT, WBNB]; // <-- strings, not bare hex literals
                     <div className="flex flex-col items-end gap-0.5">
                         <div className="flex items-center gap-1">
                             <span className="text-white text-lg font-semibold tracking-tight">
-                                {(Number(plan.price) / horsePrice).toFixed(2)}
+                                {parseFloat(ethers.utils.formatUnits(packageTokenAmount, 18)).toFixed(2)}
                             </span>
                             <span className="text-neutral-500 text-sm ml-1">HRS</span>
                         </div>

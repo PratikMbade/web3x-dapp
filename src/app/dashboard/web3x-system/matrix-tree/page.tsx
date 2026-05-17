@@ -21,7 +21,7 @@ export default async function MatrixPage() {
             Go to Login
           </a>
         </div>
-      </main>
+       </main>
     )
 
   }
@@ -34,3 +34,4 @@ export default async function MatrixPage() {
     </main>
   )
 }
+ 

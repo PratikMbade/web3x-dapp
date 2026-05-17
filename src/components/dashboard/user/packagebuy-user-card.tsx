@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, Clock, ArrowRight } from "lucide-react"
 import { toast } from 'sonner'
-import { contractInstance, metaunityAddress } from '@/contract/contract'
-import { horseTokenContractInstance, getHorsePrice } from '@/contract/horse-token-contract/contract-instance'
+import { contractInstance, metaunityAddress, getPackageTokenPrice } from '@/contract/contract'
+import { horseTokenContractInstance } from '@/contract/horse-token-contract/contract-instance'
 import { ethers } from 'ethers'
 import { FadeLoader } from 'react-spinners'
 import { useRouter } from 'next/navigation'
@@ -39,20 +39,6 @@ const planNames: Record<number, string> = {
 
 
 
-const packageAmount: Record<number, string> = {
-    1: "5",
-    2: "10",
-    3: "20",
-    4: "40",
-    5: "80",
-    6: "160",
-    7: "320",
-    8: "640",
-    9: "1280",
-    10: "2560",
-    11: "5120",
-    12: "10240",
-}
 
 export default function PackageBuyUserCard() {
     const [walletAddress, setWalletAddress] = useState("")
@@ -63,12 +49,15 @@ export default function PackageBuyUserCard() {
     const [isActivating, setIsActivating] = useState(false)
     const activeAccount = useActiveAccount();
     const [isPending, setIsPending] = useState(false);
-    const [horsePrice, setHorsePrice] = useState<number>(0.1902);
+    const [packageTokenAmount, setPackageTokenAmount] = useState<ethers.BigNumber>(ethers.BigNumber.from(0));
     const router = useRouter();
 
     useEffect(() => {
-        getHorsePrice().then(setHorsePrice)
-    }, [])
+        const plan = Number(nextPlan)
+        if (plan >= 1 && plan <= 12) {
+            getPackageTokenPrice(plan).then(setPackageTokenAmount)
+        }
+    }, [nextPlan])
 
     // Debouncing effect for wallet address verification
     useEffect(() => {
@@ -126,9 +115,8 @@ export default function PackageBuyUserCard() {
 
             const contractIns = await horseTokenContractInstance(activeAccount);
 
-            const usdtPrice = packageAmount[Number(nextPlan)] ?? '10240'
-            const hrsAmount = (Number(usdtPrice) / horsePrice).toFixed(18)
-            const wad = ethers.utils.parseUnits(hrsAmount, 18);
+            // add 5% buffer so the transaction doesn't fail due to price movement
+            const wad = packageTokenAmount.mul(105).div(100);
 
             const approve = await contractIns!.approve(
                 metaunityAddress,
