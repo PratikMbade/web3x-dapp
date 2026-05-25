@@ -14,11 +14,15 @@ import { toast } from 'sonner';
 export const metaunityAddress = '0x6eb46374b8EF7B538D17866AA7E82fcCbDa75945';
 export const wbnbAddress = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 
-export const getPackageTokenPrice = async (packageId: number): Promise<ethers.BigNumber> => {
+export const getPackageTokenPrice = async (
+    packageId: number,
+    isBulk: boolean = false,
+    token: number = 1
+): Promise<ethers.BigNumber> => {
     try {
         const provider = new ethers.providers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
         const contract = new ethers.Contract(metaunityAddress, metaunityContractABI, provider);
-        const tokenAmount: ethers.BigNumber = await contract.checkToken(packageId);
+        const tokenAmount: ethers.BigNumber = await contract.checkToken(packageId, false, token);
         return tokenAmount;
     } catch (error) {
         console.error('Failed to fetch package token price via checkToken', error);

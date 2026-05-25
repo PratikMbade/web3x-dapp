@@ -336,6 +336,11 @@
                 "internalType": "bool",
                 "name": "isBulk",
                 "type": "bool"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "_token",
+                "type": "uint256[]"
             }
         ],
         "name": "BulkBuyPackage",
@@ -872,13 +877,18 @@
             },
             {
                 "internalType": "address[]",
-                "name": "",
+                "name": "path",
                 "type": "address[]"
             },
             {
                 "internalType": "bool",
                 "name": "isBulk",
                 "type": "bool"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_token",
+                "type": "uint256"
             }
         ],
         "name": "buyPackageUser",
@@ -941,6 +951,16 @@
             {
                 "internalType": "uint256",
                 "name": "package",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bool",
+                "name": "isBulk",
+                "type": "bool"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_token",
                 "type": "uint256"
             }
         ],
@@ -1120,7 +1140,7 @@
                         "type": "address"
                     }
                 ],
-                "internalType": "struct Web3xEcosystem._uiWallets[]",
+                "internalType": "struct MatrixTest._uiWallets[]",
                 "name": "",
                 "type": "tuple[]"
             }
@@ -1340,6 +1360,11 @@
                 "internalType": "address",
                 "name": "_referal",
                 "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_token",
+                "type": "uint256"
             }
         ],
         "name": "registerUserByToken",

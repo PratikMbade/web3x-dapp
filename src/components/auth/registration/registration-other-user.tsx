@@ -6,14 +6,14 @@ import type React from 'react';
 import { FadeLoader } from 'react-spinners';
 import { ChangeEvent, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, ArrowRight, Zap, Globe, Info } from 'lucide-react';
+import { Shield, ArrowRight, Zap, Globe, X, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useActiveAccount } from 'thirdweb/react';
-import { contractInstance } from '@/contract/contract';
+import { contractInstance, wbnbContractInstance } from '@/contract/contract';
 import { HorseTokenContractAddress } from '@/contract/horse-token-contract/contract-instance';
 import { ethers5Adapter } from 'thirdweb/adapters/ethers5';
 import { client, MainnetChain } from '@/lib/client';
@@ -24,6 +24,8 @@ import { verifySponsor } from '@/actions/auth';
 import { RegisterUserByAddType, saveUserInDB } from '@/actions/user';
 import { isPackageBuyStored } from '@/actions/metaunity-system';
 import { extractEventsFromReceipt, waitForPackageBuyEvent } from '@/contract/event-poller';
+
+type PaymentMethod = 'hrs' | 'wbnb';
 
 const GridBackground = () => (
   <div className="absolute inset-0 opacity-10">
@@ -46,6 +48,8 @@ export default function RegisterOtherUser() {
   const activeAccount = useActiveAccount();
   const [isPending, setIsPending] = useState(false);
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingSponsor, setPendingSponsor] = useState<string | null>(null);
 
   const getProperCaseAddress = async (currentAddress: string) => {
     try {
@@ -75,7 +79,7 @@ export default function RegisterOtherUser() {
     }
   };
 
-const registerInSmartContract = async (properSponsorAddress: string) => {
+  const registerInSmartContract = async (properSponsorAddress: string, method: PaymentMethod) => {
     try {
       if (!activeAccount?.address) {
         toast('Connect your wallet', { icon: 'ℹ️' });
@@ -87,14 +91,12 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
 
       const contractInst = await contractInstance(activeAccount);
 
-      // Check if new user already registered
       const isRegistered = await contractInst.register(newUserAddress);
       if (isRegistered) {
         toast.error('User Already Registered!');
         return false;
       }
 
-      // Check if sponsor is registered (skip for default sponsor)
       if (properSponsorAddress.toLowerCase() !== '0x07a132a5f132619a9ea0a97e650f30d760c96b53'.toLowerCase()) {
         const isReferralExist = await contractInst.register(properSponsorAddress);
         if (!isReferralExist) {
@@ -114,60 +116,72 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
         return false;
       }
 
-      // ─── STEP 1: Get regFee from contract (used for tx value) ─────────────
       const regFee = await contractInst.regFee();
-      console.log('regFee (raw):', ethers.utils.formatUnits(regFee, 18));
+      console.log('regFee (BNB):', ethers.utils.formatUnits(regFee, 18));
 
-      // ─── STEP 2: Check native BNB balance (for gas) ────────────────────────
       const bnbBalance = await signer.provider.getBalance(activeAccount.address);
       console.log('BNB balance:', ethers.utils.formatUnits(bnbBalance, 18));
 
-      // ─── STEP 3: Approve Horse Token for the registration contract ────────
-      const HORSE_TOKEN_ABI = [
-        'function approve(address spender, uint256 amount) external returns (bool)',
-        'function allowance(address owner, address spender) external view returns (uint256)',
-      ];
+      // ── Token approval ────────────────────────────────────────────────────
+      if (method === 'hrs') {
+        const HORSE_TOKEN_ABI = [
+          'function approve(address spender, uint256 amount) external returns (bool)',
+          'function allowance(address owner, address spender) external view returns (uint256)',
+        ];
+        const horseTokenContract = new ethers.Contract(HorseTokenContractAddress, HORSE_TOKEN_ABI, signer);
+        const horseApprovalAmount = ethers.utils.parseUnits('100', 18);
+        const currentAllowance = await horseTokenContract.allowance(activeAccount.address, contractInst.address);
 
-      const horseTokenContract = new ethers.Contract(HorseTokenContractAddress, HORSE_TOKEN_ABI, signer);
-      const REGISTRATION_CONTRACT_ADDRESS = contractInst.address;
-
-      const currentAllowance = await horseTokenContract.allowance(activeAccount.address, REGISTRATION_CONTRACT_ADDRESS);
-      console.log('Current Horse Token allowance:', ethers.utils.formatUnits(currentAllowance, 18));
-
-      const horseTokenApprovalAmount = ethers.utils.parseUnits('100', 18);
-
-      if (currentAllowance.lt(horseTokenApprovalAmount)) {
-        toast('Approving Horse Token... Please confirm in your wallet', { icon: 'ℹ️' });
-        const approveTx = await horseTokenContract.approve(REGISTRATION_CONTRACT_ADDRESS, horseTokenApprovalAmount);
-        toast('Waiting for approval confirmation...', { icon: '⏳' });
-
-        const approveReceipt = await approveTx.wait(1);
-        if (!approveReceipt || approveReceipt.status !== 1) {
-          toast.error('Horse Token approval failed. Please try again.');
+        if (currentAllowance.lt(horseApprovalAmount)) {
+          toast('Approving HRS Token... Please confirm in your wallet', { icon: 'ℹ️' });
+          const approveTx = await horseTokenContract.approve(contractInst.address, horseApprovalAmount);
+          toast('Waiting for HRS approval...', { icon: '⏳' });
+          const approveReceipt = await approveTx.wait(1);
+          if (!approveReceipt || approveReceipt.status !== 1) {
+            toast.error('HRS Token approval failed. Please try again.');
+            return false;
+          }
+          toast.success('✅ HRS Token approved successfully');
+        } else {
+          console.log('Sufficient HRS allowance already exists');
+        }
+      } else {
+        // WBNB approval — use regFee amount as WBNB approval (same wei value)
+        const wbnbInst = await wbnbContractInstance(activeAccount);
+        if (!wbnbInst) {
+          toast.error('Could not connect to WBNB contract');
           return false;
         }
-
-        toast.success('✅ Horse Token approved successfully');
-      } else {
-        console.log('Sufficient Horse Token allowance already exists, skipping approval');
+        const wbnbApprovalAmount = regFee.mul(110).div(100); // 10% buffer
+        toast('Approving WBNB... Please confirm in your wallet', { icon: 'ℹ️' });
+        const approveTx = await wbnbInst.approve(contractInst.address, wbnbApprovalAmount);
+        toast('Waiting for WBNB approval...', { icon: '⏳' });
+        const approveReceipt = await approveTx.wait(1);
+        if (!approveReceipt || approveReceipt.status !== 1) {
+          toast.error('WBNB approval failed. Please try again.');
+          return false;
+        }
+        toast.success('✅ WBNB approved successfully');
       }
 
-      // ─── STEP 6: Estimate gas for registration ─────────────────────────────
+      // ── Gas estimate & registration tx ────────────────────────────────────
+      const tokenParam = method === 'hrs' ? 1 : 2;
+
       const gasEstimate = await contractInst.estimateGas.registerUserByToken(
         newUserAddress,
         properSponsorAddress,
+        tokenParam,
         { value: regFee }
       );
-
       const gasLimit = gasEstimate.mul(110).div(100);
       const feeData = await signer.provider.getFeeData();
 
       toast('Registering user... Please confirm in your wallet', { icon: 'ℹ️' });
 
-      // ─── STEP 7: Send registration tx ──────────────────────────────────────
       const tx = await contractInst.registerUserByToken(
         newUserAddress,
         properSponsorAddress,
+        tokenParam,
         {
           value: regFee,
           gasLimit,
@@ -182,7 +196,6 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
       if (receipt && receipt.status === 1) {
         const regIdRes = await contractInst.RegisterUserByAdd(newUserAddress.trim());
         const regId = regIdRes.toString();
-
         const res = await contractInst.RegisterUerById(regId);
         const formattedUser = ethers.utils.getAddress(res._user);
 
@@ -200,7 +213,6 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
 
         if (!isTranxDone) {
           const responses = await waitForPackageBuyEvent(receipt.transactionHash, formattedUser.toLowerCase());
-          console.log('response in handleBuy', responses);
 
           if (!responses.length) {
             toast.error('Transaction failed, please try again');
@@ -212,15 +224,8 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
           const all201 = responses.every((r) => r.statusCode === 201);
 
           if (has200) {
-            const res = await extractEventsFromReceipt(receipt.transactionHash, formattedUser.toLowerCase());
-            console.log('extract event', res);
-
-            if (!res) {
-              toast.error('Event parsing failed');
-              setIsPending(false);
-              return;
-            }
-
+            const evRes = await extractEventsFromReceipt(receipt.transactionHash, formattedUser.toLowerCase());
+            if (!evRes) { toast.error('Event parsing failed'); setIsPending(false); return; }
             toast.success('✅ Transaction completed successfully');
           } else if (all201) {
             toast.success('✅ Transaction already processed');
@@ -235,7 +240,6 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
       return true;
     } catch (error: any) {
       console.error('❌ Transaction Error:', error);
-
       const lower = String(error?.message || '').toLowerCase();
 
       if (lower.includes('insufficient funds')) {
@@ -268,11 +272,9 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
   const registerUser = async (data: RegisterUserByAddType) => {
     try {
       const res = await saveUserInDB(data);
-
       if (res.status === 200) {
         setIsPending(false);
         toast.success('User registered successfully!');
-        // Reset form
         setNewUserAddress('');
         setSponsorAddress('');
       } else {
@@ -290,6 +292,14 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
     }
   };
 
+  const handlePaymentSelect = async (method: PaymentMethod) => {
+    setShowPaymentModal(false);
+    if (!pendingSponsor) return;
+    setIsPending(true);
+    await registerInSmartContract(pendingSponsor, method);
+    setPendingSponsor(null);
+  };
+
   const onSubmit = async (e: ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsPending(true);
@@ -305,19 +315,21 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
 
       if (!sponsorProperAddress) {
         toast.error('Sponsor address invalid or not registered');
+        setIsPending(false);
         return;
       }
 
       const isSponsorVerified = await isReferralAvailable(sponsorProperAddress);
-
       if (!isSponsorVerified) {
+        setIsPending(false);
         return;
       }
 
-      await registerInSmartContract(sponsorProperAddress);
-    } catch (error) {
+      // Validation passed — stop spinner and show payment modal
       setIsPending(false);
-    } finally {
+      setPendingSponsor(sponsorProperAddress);
+      setShowPaymentModal(true);
+    } catch (error) {
       setIsPending(false);
     }
   };
@@ -353,6 +365,97 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
         </div>
       )}
 
+      {/* Payment Method Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 backdrop-blur-md bg-black/75 flex items-center justify-center p-4">
+          <div
+            className="relative w-full max-w-sm rounded-2xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(145deg, #1a1a1a 0%, #111111 100%)',
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.08), 0 24px 64px rgba(0,0,0,0.8)',
+            }}
+          >
+            <div
+              className="absolute top-0 left-0 right-0 h-px"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.6), transparent)' }}
+            />
+
+            <div className="flex items-center justify-between px-5 pt-5 pb-4">
+              <div>
+                <p className="text-white font-semibold text-base">Select Payment Method</p>
+                <p className="text-neutral-500 text-xs mt-0.5">Choose how to pay the registration fee</p>
+              </div>
+              <button
+                onClick={() => { setShowPaymentModal(false); setPendingSponsor(null); }}
+                className="text-neutral-500 hover:text-white transition-colors p-1"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mx-5 h-px bg-white/5" />
+
+            <div className="p-5 space-y-3">
+              {/* HRS Option */}
+              <button
+                onClick={() => handlePaymentSelect('hrs')}
+                className="w-full rounded-xl p-4 text-left transition-all duration-150 active:scale-[0.98]"
+                style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)' }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(249,115,22,0.15)' }}
+                    >
+                      <Coins className="h-4 w-4 text-orange-400" />
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-semibold">HRS Token</p>
+                      <p className="text-neutral-500 text-xs">Horse Token</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-neutral-400 text-xs">Pay with HRS</p>
+                  </div>
+                </div>
+              </button>
+
+              {/* WBNB Option */}
+              <button
+                onClick={() => handlePaymentSelect('wbnb')}
+                className="w-full rounded-xl p-4 text-left transition-all duration-150 active:scale-[0.98]"
+                style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.2)' }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(234,179,8,0.15)' }}
+                    >
+                      <Coins className="h-4 w-4 text-yellow-400" />
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-semibold">WBNB</p>
+                      <p className="text-neutral-500 text-xs">Wrapped BNB</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-neutral-400 text-xs">Pay with WBNB</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <div className="px-5 pb-5">
+              <p className="text-neutral-600 text-xs text-center">
+                Approval required before registration completes
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -384,7 +487,7 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
                     <div className="mb-6">
                       <h3 className="text-2xl font-bold text-white mb-2">Registration of New User</h3>
                       <p className="text-slate-400 text-sm">
-                        Registration fee will be charged in USDT from your wallet.
+                        Registration fee will be charged from your wallet. Choose HRS or WBNB to pay.
                       </p>
                     </div>
 
@@ -408,7 +511,6 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
                           className="border-white/10 text-white placeholder:text-slate-400 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 rounded-xl h-12 transition-all duration-300"
                           required
                         />
-
                       </motion.div>
 
                       <motion.div
@@ -430,7 +532,6 @@ const registerInSmartContract = async (properSponsorAddress: string) => {
                           className="border-white/10 text-white placeholder:text-slate-400 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 rounded-xl h-12 transition-all duration-300"
                           required
                         />
-                    
                       </motion.div>
 
                       <motion.div
