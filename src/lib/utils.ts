@@ -132,6 +132,22 @@ export async function usdtToWbnbWithValidation(amountUsdt: string) {
 }
 
 /**
+ * Get current WBNB price in USDT using PancakeSwap V2 router.
+ */
+export async function getWbnbPriceInUsdt(): Promise<number> {
+  try {
+    const router = new ethers.Contract(ROUTER_ADDRESS, ROUTER_ABI, provider);
+    const amountIn = ethers.utils.parseEther("1"); // 1 WBNB
+    const usdtDecimals = await getTokenDecimals(USDT);
+    const amountsOut = await router.getAmountsOut(amountIn, [WBNB, USDT]);
+    return parseFloat(ethers.utils.formatUnits(amountsOut[1], usdtDecimals));
+  } catch (error) {
+    console.error("Error fetching WBNB price in USDT:", error);
+    return 600;
+  }
+}
+
+/**
  * Keep your existing helper
  */
 export function fromWeiToWbnb(value: string | number | bigint): string {
