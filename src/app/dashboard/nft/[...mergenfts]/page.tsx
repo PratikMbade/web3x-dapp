@@ -67,9 +67,9 @@ export default async function NFTMergePage({ params }: Props) {
           />
         </div>
         {/* ── 1. BOUNCE SECTION (TOP) ── */}
-        <div className="mt-5">
+        {/* <div className="mt-5">
           <NFTBonceCard nft={userAllNFTs!} />
-        </div>
+        </div> */}
 
         {/* ── 2. NFT CARD + MERGE (BELOW) ── */}
     

@@ -16,6 +16,13 @@ const NFT_PERCENTAGES: Record<number, number> = { 1: 15, 2: 17, 3: 20, 4: 23, 5:
 
 export type TypeReward = { hrs: string; wbnb: string };
 
+function computeCurrentRelease(base: number, interval: number): number {
+  const now = Math.floor(Date.now() / 1000);
+  if (base >= now) return base;
+  const n = Math.floor((now - base) / interval);
+  return base + n * interval;
+}
+
 function formatReward(amount: ethers.BigNumber): string {
   const val = parseFloat(ethers.utils.formatEther(amount));
   if (val === 0) return "0.0000";
@@ -70,9 +77,9 @@ export function NFTBonceCard({ nft }: Props) {
         ]);
 
         const intervalSecs = (rewardInterval as ethers.BigNumber).toNumber();
-        const nextRelease = (releaseDate as ethers.BigNumber).toNumber();
+        const baseRelease = (releaseDate as ethers.BigNumber).toNumber();
 
-        setNextReleaseAt(nextRelease);
+        setNextReleaseAt(computeCurrentRelease(baseRelease, intervalSecs));
         setRewardIntervalSecs(intervalSecs);
 
         const counts: Record<number, ethers.BigNumber> = { 1: cnt1, 2: cnt2, 3: cnt3, 4: cnt4, 5: cnt5 };
