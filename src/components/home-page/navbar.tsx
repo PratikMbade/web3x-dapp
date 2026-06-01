@@ -79,6 +79,12 @@ export function Navbar() {
 
                         <>
 
+                        <Link href={'https://p2p.web3x.space'} target="_blank">
+                        <Button  variant={"default"}  className="font-medium ">
+                                    P2P Marketplace
+                                </Button>
+                        </Link>
+
                         <Link href={`/registration`}>
                                 <Button  variant={"default"}  className="font-medium ">
                                     Register
@@ -90,6 +96,8 @@ export function Navbar() {
                                     Log In
                                 </Button>
                        </Link>
+
+
                         </>
 
                     </div>

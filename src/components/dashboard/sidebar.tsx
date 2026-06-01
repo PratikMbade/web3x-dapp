@@ -20,6 +20,7 @@ import {
     Grid3x3,
     ImageIcon,
     User2,
+    Store,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -52,7 +53,7 @@ const navItems: NavItem[] = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
     { href: "/dashboard/web3x-system", label: "Web3xSystem", icon: Globe },
     { href: "/dashboard/horse-token", label: "Horse Token", icon: Coins },
-        // { href: "/dashboard/p2p", label: "p2p", icon: Coins },
+        { href: "https://p2p.web3x.space", label: "P2P Marketplace", icon: Store },
 
     {href:"/dashboard/direct-team",label:"Direct Team",icon: User2},
     {
@@ -179,6 +180,7 @@ export function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
                                     <Link
                                         href={item.href}
                                         onClick={handleNavClick}
+                                        target={item.href === 'https://p2p.web3x.space'?'_blank':'_self'}
                                         className={cn(
                                             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                                             isActive

@@ -13,8 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useActiveAccount } from 'thirdweb/react';
-import { contractInstance, wbnbContractInstance } from '@/contract/contract';
-import { HorseTokenContractAddress } from '@/contract/horse-token-contract/contract-instance';
+import { contractInstance, wbnbContractInstance, wbnbAddress } from '@/contract/contract';
+import { HorseTokenContractAddress, getHorsePrice } from '@/contract/horse-token-contract/contract-instance';
 import { ethers5Adapter } from 'thirdweb/adapters/ethers5';
 import { client, MainnetChain } from '@/lib/client';
 import WalletConnect from '../../web3-wallet/wallet-connect';
@@ -127,9 +127,21 @@ export default function RegisterOtherUser() {
         const HORSE_TOKEN_ABI = [
           'function approve(address spender, uint256 amount) external returns (bool)',
           'function allowance(address owner, address spender) external view returns (uint256)',
+          'function balanceOf(address account) external view returns (uint256)',
         ];
         const horseTokenContract = new ethers.Contract(HorseTokenContractAddress, HORSE_TOKEN_ABI, signer);
-        const horseApprovalAmount = ethers.utils.parseUnits('100', 18);
+        const hrsPrice = await getHorsePrice();
+        const hrsFor5USD = hrsPrice > 0 ? Math.ceil(5.5 / hrsPrice) : 30;
+        const horseApprovalAmount = ethers.utils.parseUnits(hrsFor5USD.toString(), 18);
+
+        const hrsBalance = await horseTokenContract.balanceOf(activeAccount.address);
+        if (hrsBalance.lt(horseApprovalAmount)) {
+          const have = parseFloat(ethers.utils.formatUnits(hrsBalance, 18)).toFixed(4);
+          toast.error(`Insufficient HRS balance. You have ${have} HRS but need ~${hrsFor5USD} HRS.`);
+          setIsPending(false);
+          return false;
+        }
+
         const currentAllowance = await horseTokenContract.allowance(activeAccount.address, contractInst.address);
 
         if (currentAllowance.lt(horseApprovalAmount)) {
@@ -146,13 +158,23 @@ export default function RegisterOtherUser() {
           console.log('Sufficient HRS allowance already exists');
         }
       } else {
-        // WBNB approval — use regFee amount as WBNB approval (same wei value)
         const wbnbInst = await wbnbContractInstance(activeAccount);
         if (!wbnbInst) {
           toast.error('Could not connect to WBNB contract');
           return false;
         }
-        const wbnbApprovalAmount = regFee.mul(110).div(100); // 10% buffer
+        // Fetch live BNB price via PancakeSwap and calculate WBNB amount worth > $5 USD
+        const PANCAKE_ROUTER = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
+        const USDT_BSC = '0x55d398326f99059fF775485246999027B3197955';
+        const rpcProvider = new ethers.providers.JsonRpcProvider('https://bsc-dataseed.binance.org/');
+        const pancake = new ethers.Contract(PANCAKE_ROUTER, ['function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)'], rpcProvider);
+        let bnbPriceUSD = 600;
+        try {
+          const out = await pancake.getAmountsOut(ethers.utils.parseEther('1'), [wbnbAddress, USDT_BSC]);
+          bnbPriceUSD = parseFloat(ethers.utils.formatUnits(out[1], 18));
+        } catch { /* use fallback */ }
+        const wbnbFor5USD = bnbPriceUSD > 0 ? (5.5 / bnbPriceUSD) : 0.02;
+        const wbnbApprovalAmount = ethers.utils.parseEther(wbnbFor5USD.toFixed(10));
         toast('Approving WBNB... Please confirm in your wallet', { icon: 'ℹ️' });
         const approveTx = await wbnbInst.approve(contractInst.address, wbnbApprovalAmount);
         toast('Waiting for WBNB approval...', { icon: '⏳' });
@@ -242,7 +264,16 @@ export default function RegisterOtherUser() {
       console.error('❌ Transaction Error:', error);
       const lower = String(error?.message || '').toLowerCase();
 
-      if (lower.includes('insufficient funds')) {
+      const errData: string = (error as any)?.error?.error?.data ?? (error as any)?.data ?? '';
+      if (typeof errData === 'string' && errData.startsWith('0xe450d38c')) {
+        try {
+          const iface = new ethers.utils.Interface(['error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed)']);
+          const decoded = iface.decodeErrorResult('ERC20InsufficientBalance', errData);
+          const have = parseFloat(ethers.utils.formatUnits(decoded.balance, 18)).toFixed(4);
+          const need = parseFloat(ethers.utils.formatUnits(decoded.needed, 18)).toFixed(4);
+          toast.error(`Insufficient HRS balance. You have ${have} HRS but need ${need} HRS.`);
+        } catch { toast.error('Insufficient token balance for registration.'); }
+      } else if (lower.includes('insufficient funds')) {
         toast.error('Insufficient BNB for gas fees.');
       } else if (lower.includes('user rejected') || lower.includes('denied')) {
         toast.error('Transaction rejected.');
