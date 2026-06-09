@@ -162,8 +162,8 @@ export default function PackageBuyUserCard() {
 
             const tokenParam = paymentMethod === 'hrs' ? 1 : 2
             const path = paymentMethod === 'hrs'
-                ? [HorseTokenContractAddress, wbnbAddress, USDT_ADDRESS]
-                : [wbnbAddress, USDT_ADDRESS]
+                ? [USDT_ADDRESS,wbnbAddress]
+                : [USDT_ADDRESS,wbnbAddress]
 
             const activate = await contractIns.buyPackageUser(walletAddress, path, false, tokenParam)
             const result = await activate.wait()

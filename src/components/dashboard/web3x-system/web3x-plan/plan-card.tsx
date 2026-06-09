@@ -160,8 +160,8 @@ export default function PlanCard({ id, plan, userPackage }: PlanCardProps) {
 
             const tokenParam = paymentMethod === 'hrs' ? 1 : 2
             const path = paymentMethod === 'hrs'
-                ? [HorseTokenContractAddress, wbnbAddress, USDT_ADDRESS]
-                : [wbnbAddress, USDT_ADDRESS]
+                ? [wbnbAddress,USDT_ADDRESS]
+                : [wbnbAddress,USDT_ADDRESS]
 
             const buy = await contractIns.buyPackageUser(activeAccount.address, path, false, tokenParam)
             const result = await buy.wait()

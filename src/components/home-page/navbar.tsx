@@ -147,6 +147,11 @@ export function Navbar() {
                                 ))}
                                 <div className="pt-4 flex flex-col space-y-4">
 
+         <Link href={'https://p2p.web3x.space'} target="_blank">
+                        <Button  variant={"default"}  className="font-medium ">
+                                    P2P Marketplace
+                                </Button>
+                        </Link>
                                     <Link href={`/registration`}>
                                         <Button variant={"default"} className="font-medium ">
                                             Register
